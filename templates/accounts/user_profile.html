@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ profile_user.first_name }} {{ profile_user.last_name }} - Profile{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-6">
+    <div class="bg-white rounded border p-6">
+        <div class="flex items-center mb-6">
+            <div class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-2xl font-bold mr-4">
+                {{ profile_user.first_name.0 }}{{ profile_user.last_name.0 }}
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold">{{ profile_user.first_name }} {{ profile_user.last_name }}</h1>
+                <p class="text-gray-600">@{{ profile_user.username }}</p>
+                {% if profile.bio %}
+                <p class="text-gray-700 mt-2">{{ profile.bio }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-blue-50 rounded p-4 text-center">
+                <div class="text-2xl font-bold text-blue-600">{{ total_submissions }}</div>
+                <div class="text-sm text-gray-600">Total Submissions</div>
+            </div>
+            <div class="bg-green-50 rounded p-4 text-center">
+                <div class="text-2xl font-bold text-green-600">{{ accepted_submissions }}</div>
+                <div class="text-sm text-gray-600">Accepted</div>
+            </div>
+            <div class="bg-purple-50 rounded p-4 text-center">
+                <div class="text-2xl font-bold text-purple-600">{{ success_rate }}%</div>
+                <div class="text-sm text-gray-600">Success Rate</div>
+            </div>
+        </div>
+
+        <!-- Additional Info -->
+        <div class="text-center">
+            <p class="text-gray-500">Member since {{ profile_user.date_joined|date:"M Y" }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

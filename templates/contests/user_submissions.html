@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ user.username }} - {{ contest.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4 sm:mb-6">
+        <div class="text-center sm:text-left">
+            <h1 class="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900">{{ user.username }}</h1>
+            <p class="text-sm sm:text-base text-gray-600 mt-1">{{ contest.title }}</p>
+        </div>
+        <a href="{% url 'contests:monitor_contest' contest.slug %}" class="btn btn-outline btn-sm w-full sm:w-auto">
+            <i class="fas fa-arrow-left mr-1"></i>Back to Monitor
+        </a>
+    </div>
+
+    <!-- Stats Card -->
+    <div class="bg-blue-50 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+        <div class="flex justify-center sm:justify-start items-center gap-4">
+            <div class="text-center">
+                <div class="text-lg sm:text-xl font-bold text-blue-600">{{ submissions.count }}</div>
+                <div class="text-xs sm:text-sm text-gray-600">Total Submissions</div>
+            </div>
+            <div class="text-center">
+                <div class="text-lg sm:text-xl font-bold text-green-600">{{ submissions|length|add:0 }}</div>
+                <div class="text-xs sm:text-sm text-gray-600">During Contest</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md border">
+        <div class="p-3 sm:p-4 border-b bg-gray-50">
+            <h2 class="text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <i class="fas fa-code"></i>
+                <span class="hidden sm:inline">All Submissions ({{ submissions.count }})</span>
+                <span class="sm:hidden">Submissions ({{ submissions.count }})</span>
+            </h2>
+        </div>
+        
+        {% if submissions %}
+            <!-- Desktop Table -->
+            <div class="hidden lg:block overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Problem</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Language</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Verdict</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Memory</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Submitted</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for submission in submissions %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ submission.problem.title }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-700">{{ submission.get_language_display }}</td>
+                            <td class="px-4 py-3">
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {% if submission.verdict == 'AC' %}bg-green-100 text-green-800{% elif submission.verdict == 'WA' %}bg-red-100 text-red-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                    {{ submission.verdict }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-700">{{ submission.execution_time|floatformat:2 }}s</td>
+                            <td class="px-4 py-3 text-sm text-gray-700">{{ submission.memory_used }} KB</td>
+                            <td class="px-4 py-3 text-sm text-gray-500">{{ submission.submitted_at|date:"H:i:s" }}</td>
+                            <td class="px-4 py-3">
+                                <a href="{% url 'contests:view_code' submission.id %}?contest={{ contest.slug }}" class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50" title="View Code">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Tablet Table -->
+            <div class="hidden sm:block lg:hidden overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Problem</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Verdict</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for submission in submissions %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-3 py-2">
+                                <div class="text-sm font-medium text-gray-900">{{ submission.problem.title|truncatechars:25 }}</div>
+                                <div class="text-xs text-gray-500">{{ submission.get_language_display }}</div>
+                            </td>
+                            <td class="px-3 py-2">
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {% if submission.verdict == 'AC' %}bg-green-100 text-green-800{% elif submission.verdict == 'WA' %}bg-red-100 text-red-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                    {{ submission.verdict }}
+                                </span>
+                            </td>
+                            <td class="px-3 py-2 text-xs text-gray-500">{{ submission.submitted_at|date:"H:i" }}</td>
+                            <td class="px-3 py-2">
+                                <a href="{% url 'contests:view_code' submission.id %}?contest={{ contest.slug }}" class="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50">
+                                    <i class="fas fa-eye text-sm"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Mobile Cards -->
+            <div class="sm:hidden divide-y divide-gray-200">
+                {% for submission in submissions %}
+                <div class="p-3">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-medium text-gray-900 truncate">{{ submission.problem.title }}</div>
+                            <div class="text-xs text-gray-500 mt-1">{{ submission.get_language_display }}</div>
+                        </div>
+                        <div class="flex items-center gap-2 ml-2">
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {% if submission.verdict == 'AC' %}bg-green-100 text-green-800{% elif submission.verdict == 'WA' %}bg-red-100 text-red-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                {{ submission.verdict }}
+                            </span>
+                            <a href="{% url 'contests:view_code' submission.id %}?contest={{ contest.slug }}" class="bg-blue-100 text-blue-800 p-2 rounded-full hover:bg-blue-200">
+                                <i class="fas fa-eye text-xs"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center text-xs text-gray-500">
+                        <span>{{ submission.submitted_at|date:"H:i:s" }}</span>
+                        <div class="flex gap-3">
+                            {% if submission.execution_time %}<span>{{ submission.execution_time|floatformat:2 }}s</span>{% endif %}
+                            {% if submission.memory_used %}<span>{{ submission.memory_used }}KB</span>{% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-8 sm:py-12">
+                <i class="fas fa-code text-3xl sm:text-4xl text-gray-400 mb-4"></i>
+                <p class="text-sm sm:text-base text-gray-500">No submissions found for this contest.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

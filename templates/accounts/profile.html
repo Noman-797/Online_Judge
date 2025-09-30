@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile - Semicolons{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+        <!-- Left Column - Profile Info -->
+        <div class="lg:col-span-1 space-y-4 sm:space-y-6">
+            <!-- Profile Card -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+                <div class="text-center">
+                    <div class="w-16 h-16 sm:w-20 sm:h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                        <i class="fas fa-user text-xl sm:text-2xl text-indigo-600"></i>
+                    </div>
+                    <h1 class="text-lg sm:text-xl font-semibold text-gray-900 mb-1">{{ user.get_full_name|default:user.username }}</h1>
+                    <p class="text-sm text-gray-600 mb-2">@{{ user.username }}</p>
+                    {% if user.email %}
+                        <p class="text-sm text-gray-500 mb-4">{{ user.email }}</p>
+                    {% endif %}
+                    <a href="{% url 'accounts:edit_profile' %}" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 font-medium text-sm sm:text-base w-full sm:w-auto inline-block">
+                        <i class="fas fa-edit mr-2"></i>Edit Profile
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Statistics -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+                <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Statistics</h3>
+                <div class="space-y-3 sm:space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600 text-sm sm:text-base">Total Submissions</span>
+                        <span class="text-lg sm:text-xl font-bold text-indigo-600">{{ stats.total_submissions|default:0 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600 text-sm sm:text-base">Accepted</span>
+                        <span class="text-lg sm:text-xl font-bold text-green-600">{{ stats.accepted_submissions|default:0 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600 text-sm sm:text-base">Problems Solved</span>
+                        <span class="text-lg sm:text-xl font-bold text-blue-600">{{ stats.solved_problems|default:0 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600 text-sm sm:text-base">Success Rate</span>
+                        <span class="text-lg sm:text-xl font-bold text-purple-600">{{ stats.success_rate|default:0 }}%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Admin Statistics -->
+            {% if user.is_staff and admin_stats %}
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+                <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                    <i class="fas fa-crown text-yellow-500"></i>
+                    Admin Statistics
+                </h3>
+                <div class="space-y-3 sm:space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600 text-sm sm:text-base">Problems Created</span>
+                        <span class="text-lg sm:text-xl font-bold text-blue-600">{{ admin_stats.problems_created|default:0 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600 text-sm sm:text-base">Total Problems</span>
+                        <span class="text-lg sm:text-xl font-bold text-green-600">{{ admin_stats.total_problems|default:0 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600 text-sm sm:text-base">Total Categories</span>
+                        <span class="text-lg sm:text-xl font-bold text-purple-600">{{ admin_stats.total_categories|default:0 }}</span>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <a href="{% url 'problems:admin_problems' %}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm w-full text-center block">
+                        <i class="fas fa-cog mr-2"></i>Manage Problems
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Right Column - Solved Problems -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+                <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Solved Problems</h3>
+                
+                {% if solved_problems %}
+                    <div class="space-y-3">
+                        {% for problem in solved_problems %}
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors gap-3">
+                                <div class="flex-1">
+                                    <h4 class="font-medium text-gray-900 mb-1 text-sm sm:text-base">{{ problem.title }}</h4>
+                                    <p class="text-xs sm:text-sm text-gray-600">{{ problem.category.name }}</p>
+                                </div>
+                                <div class="flex items-center gap-2 sm:gap-3">
+                                    {% if problem.difficulty == 'Easy' %}
+                                        <span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">Easy</span>
+                                    {% elif problem.difficulty == 'Medium' %}
+                                        <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">Medium</span>
+                                    {% else %}
+                                        <span class="px-2 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">Hard</span>
+                                    {% endif %}
+                                    <a href="{% url 'problems:problem_detail' problem.slug %}" 
+                                       class="bg-indigo-600 text-white px-3 py-1 rounded text-xs sm:text-sm hover:bg-indigo-700 whitespace-nowrap">
+                                        View
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-8 sm:py-12 text-gray-500">
+                        <i class="fas fa-trophy text-3xl sm:text-4xl mb-3 sm:mb-4"></i>
+                        <h4 class="text-base sm:text-lg font-medium mb-2">No problems solved yet</h4>
+                        <p class="text-sm">Start solving problems to see your progress here</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

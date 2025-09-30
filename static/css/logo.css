@@ -1,0 +1,49 @@
+/* Fixed Logo Styles */
+.logo-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Inter', sans-serif;
+    text-decoration: none;
+    transition: none !important;
+}
+
+.logo-icon-alt {
+    background: #0f172a;
+    border: 2px solid #22d3ee;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.logo-icon-alt::before {
+    content: '</>';
+    color: #22d3ee;
+    font-size: 12px !important;
+    font-weight: bold;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.logo-icon-alt::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 3px;
+    height: 3px;
+    background: #10b981;
+    border-radius: 50%;
+}
+
+.logo-text {
+    font-size: 18px !important;
+    font-weight: 700;
+    color: #0f172a;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: -0.02em;
+    flex-shrink: 0;
+    transition: none !important;
+}

@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ contest.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-4 sm:py-6">
+    <!-- Contest Info -->
+    <div class="bg-white rounded-lg shadow-md border p-4 sm:p-6 mb-6">
+        <div class="flex justify-between items-start mb-6">
+            <div class="flex-1 text-center">
+                <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">{{ contest.title }}</h1>
+                <div class="flex items-center justify-center gap-2 text-sm text-gray-600">
+                    <i class="fas fa-trophy"></i>
+                    <span>Programming Contest</span>
+                </div>
+            </div>
+            {% if user.is_staff %}
+                <a href="{% url 'contests:admin_contests' %}" class="btn btn-outline btn-sm">
+                    <i class="fas fa-arrow-left mr-1"></i>Back
+                </a>
+            {% else %}
+                <a href="{% url 'contests:contest_list' %}" class="btn btn-outline btn-sm">
+                    <i class="fas fa-arrow-left mr-1"></i>Back
+                </a>
+            {% endif %}
+        </div>
+        
+        <!-- Time Table -->
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 sm:p-6 mb-6 sm:mb-8 shadow-sm">
+            <h3 class="text-base sm:text-lg font-bold text-center mb-4 sm:mb-6 text-gray-800">Contest Schedule</h3>
+            
+            <!-- Countdown Timer -->
+            <div id="countdown-timer" class="bg-white rounded-lg p-4 mb-4 shadow-sm text-center">
+                <div class="text-gray-500 text-xs sm:text-sm mb-2" id="countdown-label">Time Remaining</div>
+                <div id="countdown-display" class="font-bold text-2xl sm:text-3xl text-red-600">Loading...</div>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                <div class="bg-white rounded-lg p-3 sm:p-4 shadow-sm text-center">
+                    <span class="text-gray-500 text-xs sm:text-sm block mb-2">Start Time</span>
+                    <div class="font-bold text-gray-800 text-sm sm:text-base">{{ contest.start_time|date:"M d, Y" }}</div>
+                    <div class="font-bold text-blue-600 text-sm sm:text-base">{{ contest.start_time|date:"H:i" }} BDT</div>
+                </div>
+                <div class="bg-white rounded-lg p-3 sm:p-4 shadow-sm text-center">
+                    <span class="text-gray-500 text-xs sm:text-sm block mb-2">End Time</span>
+                    <div class="font-bold text-gray-800 text-sm sm:text-base">{{ contest.end_time|date:"M d, Y" }}</div>
+                    <div class="font-bold text-blue-600 text-sm sm:text-base">{{ contest.end_time|date:"H:i" }} BDT</div>
+                </div>
+                <div class="bg-white rounded-lg p-3 sm:p-4 shadow-sm text-center sm:col-span-2 lg:col-span-1">
+                    <span class="text-gray-500 text-xs sm:text-sm block mb-2">Duration</span>
+                    <div class="font-bold text-green-600 text-base sm:text-lg">{{ contest.duration }} min</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Description -->
+        <div class="mb-6 sm:mb-8">
+            <h2 class="text-lg sm:text-xl font-bold text-center mb-4 sm:mb-6 text-gray-900">Description</h2>
+            <div class="bg-gray-50 rounded-lg p-4 sm:p-6">
+                <div class="text-gray-700 text-sm sm:text-base leading-relaxed prose prose-sm sm:prose max-w-none prose-ul:list-disc prose-ol:list-decimal prose-li:ml-4 prose-strong:font-bold prose-em:italic prose-u:underline prose-headings:font-bold prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-p:mb-3 prose-code:bg-gray-200 prose-code:px-1 prose-code:rounded">{{ contest.description|safe }}</div>
+            </div>
+        </div>
+
+        <!-- Rules -->
+        {% if contest.rules %}
+        <div class="mb-6 sm:mb-8">
+            <h2 class="text-lg sm:text-xl font-bold text-center mb-4 sm:mb-6 text-gray-900">Rules</h2>
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 sm:p-6">
+                <div class="text-gray-700 text-sm sm:text-base leading-relaxed prose prose-sm sm:prose max-w-none prose-ul:list-disc prose-ol:list-decimal prose-li:ml-4 prose-strong:font-bold prose-em:italic prose-u:underline prose-headings:font-bold prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-p:mb-3 prose-code:bg-gray-200 prose-code:px-1 prose-code:rounded">{{ contest.rules|safe }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Registration/Status -->
+        <div class="bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg shadow-lg p-4 sm:p-6 lg:p-8 text-center">
+            {% if is_admin %}
+                <div class="mb-4 sm:mb-6">
+                    <div class="inline-flex items-center px-3 sm:px-4 py-2 bg-purple-100 text-purple-800 rounded-full text-xs sm:text-sm font-medium mb-4">
+                        <i class="fas fa-crown mr-2"></i>
+                        Admin Access
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                    <a href="{% url 'contests:contest_problems' contest.slug %}" class="bg-blue-600 text-white px-6 sm:px-8 py-3 rounded-lg hover:bg-blue-700 text-sm sm:text-base font-medium">
+                        <i class="fas fa-list mr-2"></i>View Problems
+                    </a>
+                    <a href="{% url 'contests:manage_problems' contest.slug %}" class="bg-gray-600 text-white px-6 sm:px-8 py-3 rounded-lg hover:bg-gray-700 text-sm sm:text-base font-medium">
+                        <i class="fas fa-cog mr-2"></i>Edit Contest
+                    </a>
+                </div>
+            {% elif user.is_authenticated %}
+                {% if is_banned %}
+                    <div class="mb-4 sm:mb-6">
+                        <i class="fas fa-ban text-3xl sm:text-4xl text-red-600 mb-3"></i>
+                        <p class="text-red-600 text-base sm:text-lg font-bold">You are banned from this contest</p>
+                        <p class="text-gray-600 text-sm mt-2">Contact admin for more information</p>
+                    </div>
+                    <button class="bg-red-600 text-white px-8 sm:px-12 py-3 sm:py-4 rounded-lg text-sm sm:text-lg font-medium opacity-75 cursor-not-allowed inline-flex items-center gap-2" disabled>
+                        <i class="fas fa-ban"></i>Banned
+                    </button>
+                {% elif not participation %}
+                    {% if contest.status == 'upcoming' %}
+                        <div class="mb-4 sm:mb-6">
+                            <i class="fas fa-clock text-3xl sm:text-4xl text-blue-600 mb-3"></i>
+                            <p class="text-blue-600 text-base sm:text-lg font-medium">Register now for upcoming contest!</p>
+                        </div>
+                        <a href="{% url 'contests:join_contest' contest.slug %}" class="bg-blue-600 text-white px-8 sm:px-12 py-3 sm:py-4 rounded-lg hover:bg-blue-700 text-sm sm:text-lg font-medium shadow-lg inline-flex items-center gap-2">
+                            <i class="fas fa-user-plus"></i>Register for Contest
+                        </a>
+                    {% elif contest.status == 'running' %}
+                        <div class="mb-4 sm:mb-6">
+                            <i class="fas fa-play-circle text-3xl sm:text-4xl text-green-600 mb-3"></i>
+                            <p class="text-green-600 text-base sm:text-lg font-medium">Contest is live! Register to participate.</p>
+                        </div>
+                        <a href="{% url 'contests:join_contest' contest.slug %}" class="bg-green-600 text-white px-8 sm:px-12 py-3 sm:py-4 rounded-lg hover:bg-green-700 text-sm sm:text-lg font-medium shadow-lg inline-flex items-center gap-2">
+                            <i class="fas fa-rocket"></i>Register & Join Contest
+                        </a>
+                    {% else %}
+                        <div class="mb-4 sm:mb-6">
+                            <i class="fas fa-flag-checkered text-3xl sm:text-4xl text-gray-600 mb-3"></i>
+                            <p class="text-gray-600 text-base sm:text-lg font-medium">Contest has ended</p>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                            <a href="{% url 'contests:contest_problems' contest.slug %}" class="bg-blue-600 text-white px-6 sm:px-8 py-3 rounded-lg hover:bg-blue-700 text-sm sm:text-base font-medium inline-flex items-center gap-2">
+                                <i class="fas fa-list"></i>View Problems
+                            </a>
+                            <a href="{% url 'contests:leaderboard' contest.slug %}" class="bg-gray-600 text-white px-6 sm:px-8 py-3 rounded-lg hover:bg-gray-700 text-sm sm:text-base font-medium inline-flex items-center gap-2">
+                                <i class="fas fa-trophy"></i>View Results
+                            </a>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    {% if contest.status == 'upcoming' %}
+                        <div class="mb-4 sm:mb-6">
+                            <i class="fas fa-check-circle text-3xl sm:text-4xl text-green-600 mb-3"></i>
+                            <p class="text-green-600 text-base sm:text-lg font-medium">You are registered! Contest will start soon.</p>
+                        </div>
+                        <button class="bg-green-600 text-white px-8 sm:px-12 py-3 sm:py-4 rounded-lg text-sm sm:text-lg font-medium opacity-75 cursor-not-allowed inline-flex items-center gap-2" disabled>
+                            <i class="fas fa-check"></i>Registered
+                        </button>
+                    {% elif contest.status == 'running' %}
+                        <div class="mb-4 sm:mb-6">
+                            <i class="fas fa-code text-3xl sm:text-4xl text-green-600 mb-3"></i>
+                            <p class="text-green-600 text-base sm:text-lg font-medium">Contest is live! Start solving problems.</p>
+                        </div>
+                        <a href="{% url 'contests:contest_problems' contest.slug %}" class="bg-green-600 text-white px-8 sm:px-12 py-3 sm:py-4 rounded-lg hover:bg-green-700 text-sm sm:text-lg font-medium shadow-lg inline-flex items-center gap-2">
+                            <i class="fas fa-play"></i>Enter Contest
+                        </a>
+                    {% else %}
+                        <div class="mb-4 sm:mb-6">
+                            <i class="fas fa-medal text-3xl sm:text-4xl text-gray-600 mb-3"></i>
+                            <p class="text-gray-600 text-base sm:text-lg font-medium">Contest has ended</p>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                            <a href="{% url 'contests:contest_problems' contest.slug %}" class="bg-blue-600 text-white px-6 sm:px-8 py-3 rounded-lg hover:bg-blue-700 text-sm sm:text-base font-medium inline-flex items-center gap-2">
+                                <i class="fas fa-list"></i>View Problems
+                            </a>
+                            <a href="{% url 'contests:leaderboard' contest.slug %}" class="bg-gray-600 text-white px-6 sm:px-8 py-3 rounded-lg hover:bg-gray-700 text-sm sm:text-base font-medium inline-flex items-center gap-2">
+                                <i class="fas fa-trophy"></i>View Results
+                            </a>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            {% else %}
+                <div class="mb-4 sm:mb-6">
+                    <i class="fas fa-sign-in-alt text-3xl sm:text-4xl text-orange-600 mb-3"></i>
+                    <p class="text-orange-600 text-base sm:text-lg font-medium">Please login to register for contest</p>
+                </div>
+                <a href="{% url 'accounts:login' %}" class="bg-orange-600 text-white px-8 sm:px-12 py-3 sm:py-4 rounded-lg hover:bg-orange-700 text-sm sm:text-lg font-medium shadow-lg inline-flex items-center gap-2">
+                    <i class="fas fa-sign-in-alt"></i>Login to Register
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Contest countdown timer
+const startTime = new Date('{{ contest.start_time|date:"c" }}').getTime();
+const endTime = new Date('{{ contest.end_time|date:"c" }}').getTime();
+const contestStatus = '{{ contest.status }}';
+
+function updateCountdown() {
+    const now = new Date().getTime();
+    const countdownLabel = document.getElementById('countdown-label');
+    const countdownDisplay = document.getElementById('countdown-display');
+    const countdownTimer = document.getElementById('countdown-timer');
+    
+    let targetTime, labelText, colorClass;
+    
+    if (contestStatus === 'upcoming') {
+        targetTime = startTime;
+        labelText = 'Contest Starts In';
+        colorClass = 'text-blue-600';
+    } else if (contestStatus === 'running') {
+        targetTime = endTime;
+        labelText = 'Contest Ends In';
+        colorClass = 'text-red-600';
+    } else {
+        countdownLabel.textContent = 'Contest Status';
+        countdownDisplay.textContent = 'Contest Ended';
+        countdownDisplay.className = 'font-bold text-2xl sm:text-3xl text-gray-600';
+        return;
+    }
+    
+    const timeLeft = targetTime - now;
+    
+    if (timeLeft > 0) {
+        const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+        
+        let timeString = '';
+        if (days > 0) {
+            timeString = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        } else if (hours > 0) {
+            timeString = `${hours}h ${minutes}m ${seconds}s`;
+        } else {
+            timeString = `${minutes}m ${seconds}s`;
+        }
+        
+        countdownLabel.textContent = labelText;
+        countdownDisplay.textContent = timeString;
+        countdownDisplay.className = `font-bold text-2xl sm:text-3xl ${colorClass}`;
+    } else {
+        // Time's up, reload page to update status
+        location.reload();
+    }
+}
+
+// Update countdown every second
+setInterval(updateCountdown, 1000);
+updateCountdown(); // Initial call
+</script>
+{% endblock %}

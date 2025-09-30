@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Contests{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-4 sm:py-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+        <div>
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Manage Contests</h1>
+            <p class="text-sm text-gray-600 mt-1">Create and manage programming contests</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'contests:add_contest' %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus mr-1"></i>
+                Create Contest
+            </a>
+            <a href="{% url 'problems:admin_problems' %}" class="btn btn-outline btn-sm">
+                <i class="fas fa-arrow-left mr-1"></i>Back
+            </a>
+        </div>
+    </div>
+
+    <!-- Live Contests -->
+    {% if running %}
+    <div class="bg-white rounded-lg shadow-md border mb-6">
+        <div class="bg-green-50 px-6 py-3 border-b">
+            <h2 class="text-lg font-semibold text-green-800 flex items-center gap-2">
+                <i class="fas fa-play-circle"></i>
+                Live Contests ({{ running|length }})
+            </h2>
+        </div>
+            <!-- Desktop Table View -->
+            <div class="hidden lg:block overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contest</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for contest in running %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4">
+                                <div class="font-medium text-gray-900">{{ contest.title }}</div>
+                                <div class="text-sm text-gray-500">{{ contest.duration }} minutes</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                {% if contest.status == 'upcoming' %}
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Upcoming</span>
+                                {% elif contest.status == 'running' %}
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Running</span>
+                                {% else %}
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Ended</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">
+                                {{ contest.start_time|date:"M d, H:i" }}
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-2">
+                                    <a href="{% url 'contests:contest_detail' contest.slug %}" class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50" title="View Contest">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'contests:edit_contest' contest.slug %}" class="text-yellow-600 hover:text-yellow-800 p-2 rounded hover:bg-yellow-50" title="Edit Contest">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'contests:manage_problems' contest.slug %}" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50" title="Manage Problems">
+                                        <i class="fas fa-cogs"></i>
+                                    </a>
+                                    <a href="{% url 'contests:monitor_contest' contest.slug %}" class="text-purple-600 hover:text-purple-800 p-2 rounded hover:bg-purple-50" title="Monitor Contest">
+                                        <i class="fas fa-eye-slash"></i>
+                                    </a>
+                                    <a href="{% url 'contests:delete_contest' contest.slug %}" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50" title="Delete Contest">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Mobile Card View -->
+            <div class="lg:hidden divide-y divide-gray-200">
+                {% for contest in running %}
+                    <div class="p-4 hover:bg-gray-50">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-medium text-gray-900 text-sm sm:text-base truncate">{{ contest.title }}</h3>
+                                <div class="flex flex-wrap items-center gap-2 mt-2">
+                                    {% if contest.status == 'upcoming' %}
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Upcoming</span>
+                                    {% elif contest.status == 'running' %}
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Running</span>
+                                    {% else %}
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Ended</span>
+                                    {% endif %}
+                                    <span class="text-xs text-gray-500">{{ contest.duration }} min</span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">{{ contest.start_time|date:"M d, Y H:i" }}</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-1">
+                            <a href="{% url 'contests:contest_detail' contest.slug %}" class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50" title="View">
+                                <i class="fas fa-eye text-sm"></i>
+                            </a>
+                            <a href="{% url 'contests:edit_contest' contest.slug %}" class="text-yellow-600 hover:text-yellow-800 p-2 rounded hover:bg-yellow-50" title="Edit">
+                                <i class="fas fa-edit text-sm"></i>
+                            </a>
+                            <a href="{% url 'contests:manage_problems' contest.slug %}" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50" title="Problems">
+                                <i class="fas fa-cogs text-sm"></i>
+                            </a>
+                            <a href="{% url 'contests:monitor_contest' contest.slug %}" class="text-purple-600 hover:text-purple-800 p-2 rounded hover:bg-purple-50" title="Monitor">
+                                <i class="fas fa-eye-slash text-sm"></i>
+                            </a>
+                            <a href="{% url 'contests:delete_contest' contest.slug %}" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50" title="Delete">
+                                <i class="fas fa-trash text-sm"></i>
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+    </div>
+    {% endif %}
+    
+    <!-- Upcoming Contests -->
+    {% if upcoming %}
+    <div class="bg-white rounded-lg shadow-md border mb-6">
+        <div class="bg-blue-50 px-6 py-3 border-b">
+            <h2 class="text-lg font-semibold text-blue-800 flex items-center gap-2">
+                <i class="fas fa-clock"></i>
+                Upcoming Contests ({{ upcoming|length }})
+            </h2>
+        </div>
+        <div class="hidden lg:block overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contest</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for contest in upcoming %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4">
+                            <div class="font-medium text-gray-900">{{ contest.title }}</div>
+                            <div class="text-sm text-gray-500">{{ contest.duration }} minutes</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Upcoming</span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500">
+                            {{ contest.start_time|date:"M d, H:i" }}
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <a href="{% url 'contests:contest_detail' contest.slug %}" class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50" title="View Contest">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'contests:manage_problems' contest.slug %}" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50" title="Manage Problems">
+                                    <i class="fas fa-cogs"></i>
+                                </a>
+                                <a href="{% url 'contests:delete_contest' contest.slug %}" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50" title="Delete Contest">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="lg:hidden divide-y divide-gray-200">
+            {% for contest in upcoming %}
+                <div class="p-4 hover:bg-gray-50">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-medium text-gray-900 text-sm sm:text-base truncate">{{ contest.title }}</h3>
+                            <div class="flex flex-wrap items-center gap-2 mt-2">
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Upcoming</span>
+                                <span class="text-xs text-gray-500">{{ contest.duration }} min</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">{{ contest.start_time|date:"M d, Y H:i" }}</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-1">
+                        <a href="{% url 'contests:contest_detail' contest.slug %}" class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50" title="View">
+                            <i class="fas fa-eye text-sm"></i>
+                        </a>
+                        <a href="{% url 'contests:manage_problems' contest.slug %}" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50" title="Problems">
+                            <i class="fas fa-cogs text-sm"></i>
+                        </a>
+                        <a href="{% url 'contests:delete_contest' contest.slug %}" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50" title="Delete">
+                            <i class="fas fa-trash text-sm"></i>
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Past Contests -->
+    {% if ended %}
+    <div class="bg-white rounded-lg shadow-md border mb-6">
+        <div class="bg-gray-50 px-6 py-3 border-b">
+            <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <i class="fas fa-flag-checkered"></i>
+                Past Contests ({{ ended|length }})
+            </h2>
+        </div>
+        <div class="hidden lg:block overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contest</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for contest in ended %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4">
+                            <div class="font-medium text-gray-900">{{ contest.title }}</div>
+                            <div class="text-sm text-gray-500">{{ contest.duration }} minutes</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Ended</span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500">
+                            {{ contest.start_time|date:"M d, H:i" }}
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <a href="{% url 'contests:contest_detail' contest.slug %}" class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50" title="View Contest">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'contests:manage_problems' contest.slug %}" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50" title="Manage Problems">
+                                    <i class="fas fa-cogs"></i>
+                                </a>
+                                <a href="{% url 'contests:delete_contest' contest.slug %}" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50" title="Delete Contest">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="lg:hidden divide-y divide-gray-200">
+            {% for contest in ended %}
+                <div class="p-4 hover:bg-gray-50">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-medium text-gray-900 text-sm sm:text-base truncate">{{ contest.title }}</h3>
+                            <div class="flex flex-wrap items-center gap-2 mt-2">
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Ended</span>
+                                <span class="text-xs text-gray-500">{{ contest.duration }} min</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">{{ contest.start_time|date:"M d, Y H:i" }}</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-1">
+                        <a href="{% url 'contests:contest_detail' contest.slug %}" class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50" title="View">
+                            <i class="fas fa-eye text-sm"></i>
+                        </a>
+                        <a href="{% url 'contests:manage_problems' contest.slug %}" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50" title="Problems">
+                            <i class="fas fa-cogs text-sm"></i>
+                        </a>
+                        <a href="{% url 'contests:delete_contest' contest.slug %}" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50" title="Delete">
+                            <i class="fas fa-trash text-sm"></i>
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- No Contests Message -->
+    {% if not upcoming and not running and not ended %}
+    <div class="bg-white rounded-lg shadow-md border">
+        <div class="text-center py-8 sm:py-12 px-4">
+            <i class="fas fa-trophy text-3xl sm:text-4xl text-gray-400 mb-4"></i>
+            <h3 class="text-base sm:text-lg font-medium text-gray-900 mb-2">No contests yet</h3>
+            <p class="text-sm sm:text-base text-gray-500 mb-4 sm:mb-6">Get started by creating your first contest</p>
+            <a href="{% url 'contests:add_contest' %}" class="bg-blue-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg hover:bg-blue-700 text-sm sm:text-base">
+                <i class="fas fa-plus mr-2"></i>Create Contest
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

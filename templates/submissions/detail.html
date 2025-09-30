@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}Submission #{{ submission.id }} - Semicolons{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <!-- Submission Details -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-6 sm:mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-4">
+            <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+                Submission #{{ submission.id }}
+            </h1>
+            <a href="{% url 'submissions:my_submissions' %}" 
+               class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 font-medium text-sm sm:text-base w-full sm:w-auto text-center">
+                <i class="fas fa-arrow-left mr-2"></i>Back
+            </a>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div class="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
+                <div class="text-xs sm:text-sm text-gray-500 mb-2">Problem</div>
+                <div class="font-semibold text-sm sm:text-base truncate">
+                    <a href="{% url 'problems:problem_detail' submission.problem.slug %}" 
+                       class="text-blue-600 hover:text-blue-800">
+                        {{ submission.problem.title }}
+                    </a>
+                </div>
+            </div>
+            <div class="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
+                <div class="text-xs sm:text-sm text-gray-500 mb-2">Language</div>
+                <div class="font-semibold text-gray-900 font-mono text-sm sm:text-base">
+                    {% if submission.language == 'cpp' %}
+                        C++
+                    {% elif submission.language == 'python' %}
+                        Python
+                    {% elif submission.language == 'java' %}
+                        Java
+                    {% else %}
+                        {{ submission.language|upper }}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
+                <div class="text-xs sm:text-sm text-gray-500 mb-2">Submitted</div>
+                <div class="font-semibold text-gray-900 text-xs sm:text-sm lg:text-base">
+                    <div class="sm:hidden">{{ submission.submitted_at|date:"M d" }}</div>
+                    <div class="hidden sm:block lg:hidden">{{ submission.submitted_at|date:"M d, H:i" }}</div>
+                    <div class="hidden lg:block">{{ submission.submitted_at|date:"M d, Y H:i" }}</div>
+                </div>
+            </div>
+            <div class="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
+                <div class="text-xs sm:text-sm text-gray-500 mb-2">Status</div>
+                <div class="{{ submission.get_verdict_display_class }} font-semibold text-base sm:text-lg">
+                    {% if submission.verdict == 'QUEUED' %}
+                        Queued
+                    {% elif submission.verdict == 'JUDGING' %}
+                        Judging
+                    {% elif submission.verdict == 'AC' %}
+                        Accepted
+                    {% elif submission.verdict == 'WA' %}
+                        Wrong Answer
+                    {% elif submission.verdict == 'CE' %}
+                        Compilation Error
+                    {% elif submission.verdict == 'RE' %}
+                        Runtime Error
+                    {% elif submission.verdict == 'TLE' %}
+                        Time Limit Exceeded
+                    {% elif submission.verdict == 'MLE' %}
+                        Memory Limit Exceeded
+                    {% elif submission.verdict == 'PE' %}
+                        Presentation Error
+                    {% else %}
+                        {{ submission.verdict }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        {% if submission.execution_time or submission.memory_used %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mt-4 sm:mt-6">
+            {% if submission.execution_time %}
+            <div class="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
+                <div class="text-xs sm:text-sm text-gray-500 mb-2">Execution Time</div>
+                <div class="font-semibold text-gray-900 text-sm sm:text-base">{{ submission.execution_time|floatformat:3 }}s</div>
+            </div>
+            {% endif %}
+            {% if submission.memory_used %}
+            <div class="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
+                <div class="text-xs sm:text-sm text-gray-500 mb-2">Memory Used</div>
+                <div class="font-semibold text-gray-900 text-sm sm:text-base">{{ submission.memory_used }} KB</div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Error Details (if any) -->
+    {% if submission.compilation_error or submission.runtime_error %}
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-6 sm:mb-8">
+            <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                {% if submission.compilation_error %}
+                    Compilation Error
+                {% else %}
+                    Runtime Error
+                {% endif %}
+            </h3>
+            <div class="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 overflow-x-auto">
+                <pre class="text-xs sm:text-sm font-mono text-red-800 whitespace-pre-wrap">{% if submission.compilation_error %}{{ submission.compilation_error }}{% else %}{{ submission.runtime_error }}{% endif %}</pre>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Source Code -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-3">
+            <h3 class="text-lg sm:text-xl font-semibold text-gray-900">Source Code</h3>
+            <button onclick="copyCode()" class="bg-gray-200 text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-300 font-medium text-sm sm:text-base w-full sm:w-auto">
+                <i class="fas fa-copy mr-2"></i>Copy
+            </button>
+        </div>
+        <div class="bg-gray-100 rounded-lg p-3 sm:p-4 overflow-x-auto">
+            <pre id="source-code" class="text-xs sm:text-sm font-mono text-gray-900 whitespace-pre-wrap"><code>{{ submission.code }}</code></pre>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyCode() {
+    const codeElement = document.getElementById('source-code');
+    const text = codeElement.textContent;
+    
+    navigator.clipboard.writeText(text).then(function() {
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check mr-1"></i>Copied!';
+        btn.classList.add('bg-green-600', 'text-white');
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.classList.remove('bg-green-600', 'text-white');
+        }, 2000);
+    }, 2000);
+}
+</script>
+{% endblock %}

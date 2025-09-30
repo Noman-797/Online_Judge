@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Contest - {{ contest.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-6">
+    <div class="flex items-center justify-between mb-4">
+        <h1 class="text-xl font-bold">Edit Contest</h1>
+        <a href="{% url 'contests:admin_contests' %}" class="btn btn-outline btn-sm">
+            <i class="fas fa-arrow-left mr-1"></i>Back
+        </a>
+    </div>
+
+    <div class="bg-white rounded border p-4">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-1">Title</label>
+                {{ form.title }}
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-1">Slug</label>
+                {{ form.slug }}
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-1">Description</label>
+                <div id="description-editor" style="height: 200px;"></div>
+                <textarea name="description" id="description-textarea" style="display: none;">{{ form.description.value|default:'' }}</textarea>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-1">Rules</label>
+                <div id="rules-editor" style="height: 200px;"></div>
+                <textarea name="rules" id="rules-textarea" style="display: none;">{{ form.rules.value|default:'' }}</textarea>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text font-medium">Contest Start</span>
+                    </label>
+                    <input type="datetime-local" name="start_time" 
+                           class="input input-bordered w-full" 
+                           value="{{ form.start_time.value|date:'Y-m-d\TH:i' }}">
+                    <label class="label">
+                        <span class="label-text-alt text-gray-500">When the contest begins</span>
+                    </label>
+                </div>
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text font-medium">Contest End</span>
+                    </label>
+                    <input type="datetime-local" name="end_time" 
+                           class="input input-bordered w-full" 
+                           value="{{ form.end_time.value|date:'Y-m-d\TH:i' }}">
+                    <label class="label">
+                        <span class="label-text-alt text-gray-500">When the contest ends</span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Duration Display -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="text-blue-800 font-medium">Duration: </span>
+                    <span id="duration-display" class="text-blue-700">Select start and end times</span>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button type="submit" class="btn btn-primary">Update Contest</button>
+                <a href="{% url 'contests:admin_contests' %}" class="btn btn-outline">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+
+<script>
+// Initialize Quill editors
+const descriptionEditor = new Quill('#description-editor', {
+    theme: 'snow',
+    modules: {
+        toolbar: [['bold', 'italic', 'underline'], ['code-block'], [{'list': 'ordered'}, {'list': 'bullet'}]]
+    }
+});
+
+const rulesEditor = new Quill('#rules-editor', {
+    theme: 'snow',
+    modules: {
+        toolbar: [['bold', 'italic', 'underline'], ['code-block'], [{'list': 'ordered'}, {'list': 'bullet'}]]
+    }
+});
+
+// Set initial content
+descriptionEditor.root.innerHTML = document.getElementById('description-textarea').value;
+rulesEditor.root.innerHTML = document.getElementById('rules-textarea').value;
+
+// Sync editor content to hidden textareas on form submit
+document.querySelector('form').addEventListener('submit', function() {
+    document.getElementById('description-textarea').value = descriptionEditor.root.innerHTML;
+    document.getElementById('rules-textarea').value = rulesEditor.root.innerHTML;
+});
+
+// Duration calculation
+const startTimeInput = document.querySelector('input[name="start_time"]');
+const endTimeInput = document.querySelector('input[name="end_time"]');
+const durationDisplay = document.getElementById('duration-display');
+
+function updateDuration() {
+    const startTime = new Date(startTimeInput.value);
+    const endTime = new Date(endTimeInput.value);
+    
+    if (startTime && endTime && endTime > startTime) {
+        const diffMs = endTime - startTime;
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        
+        if (diffHours > 0) {
+            durationDisplay.textContent = `${diffHours}h ${diffMinutes}m`;
+        } else {
+            durationDisplay.textContent = `${diffMinutes}m`;
+        }
+        durationDisplay.className = 'text-blue-700';
+    } else if (endTime <= startTime) {
+        durationDisplay.textContent = 'End time must be after start time';
+        durationDisplay.className = 'text-red-600';
+    } else {
+        durationDisplay.textContent = 'Select start and end times';
+        durationDisplay.className = 'text-gray-500';
+    }
+}
+
+startTimeInput.addEventListener('change', updateDuration);
+endTimeInput.addEventListener('change', updateDuration);
+updateDuration();
+</script>
+{% endblock %}

@@ -1,0 +1,675 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ problem.title }} - Semicolons{% endblock %}
+
+{% block content %}
+<style>
+    @media (min-width: 1024px) {
+        body { overflow: hidden; }
+        main { padding: 0 !important; max-width: none !important; height: calc(100vh - 64px); overflow: hidden; }
+    }
+    @media (max-width: 1023px) {
+        main { padding: 0 !important; max-width: none !important; }
+    }
+</style>
+
+<div class="h-full flex flex-col overflow-hidden">
+    <!-- Problem Header -->
+    <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-3 sm:px-6 py-3 sm:py-4 flex-shrink-0">
+        <div class="flex items-center justify-between">
+            <div class="min-w-0 flex-1">
+                <h1 class="text-base sm:text-xl font-semibold text-gray-900 dark:text-gray-100 truncate">{{ problem.title }}</h1>
+                <div class="flex items-center gap-2 sm:gap-3 mt-1">
+                    {% if problem.difficulty == 'Easy' %}
+                        <span class="text-xs sm:text-sm text-green-600 dark:text-green-400 font-medium">Easy</span>
+                    {% elif problem.difficulty == 'Medium' %}
+                        <span class="text-xs sm:text-sm text-yellow-600 dark:text-yellow-400 font-medium">Medium</span>
+                    {% else %}
+                        <span class="text-xs sm:text-sm text-red-600 dark:text-red-400 font-medium">Hard</span>
+                    {% endif %}
+                    <span class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">•</span>
+                    <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">{{ problem.category.name }}</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                {% if user.is_staff %}
+                    <a href="{% url 'problems:edit_problem' problem.slug %}" class="btn btn-outline btn-sm flex-shrink-0">
+                        <i class="fas fa-edit mr-1"></i><span class="hidden sm:inline">Edit</span>
+                    </a>
+                {% endif %}
+                {% if user.is_staff %}
+                    <a href="{% url 'problems:admin_problems' %}" class="btn btn-outline btn-sm flex-shrink-0">
+                        <i class="fas fa-arrow-left mr-1"></i><span class="hidden sm:inline">Back</span>
+                    </a>
+                {% else %}
+                    <a href="javascript:history.back()" class="btn btn-outline btn-sm flex-shrink-0">
+                        <i class="fas fa-arrow-left mr-1"></i><span class="hidden sm:inline">Back</span>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col lg:flex-row lg:overflow-hidden">
+        <!-- Problem Statement Panel -->
+        <div id="problemPanel" class="w-full lg:w-1/2 bg-white dark:bg-gray-800 flex flex-col lg:overflow-hidden">
+            <div class="flex-1 lg:overflow-y-auto p-3 sm:p-6">
+                <!-- Problem Statement -->
+                <div class="mb-4 sm:mb-6">
+                    <div class="text-gray-700 dark:text-gray-300 leading-relaxed prose prose-sm sm:prose max-w-none">
+                        {{ problem.description|safe }}
+                    </div>
+                </div>
+
+                <!-- Input Format -->
+                {% if problem.input_format %}
+                <div class="mb-4 sm:mb-6">
+                    <h3 class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100 mb-2 sm:mb-3">Input Format</h3>
+                    <div class="text-gray-700 dark:text-gray-300 leading-relaxed prose prose-sm sm:prose max-w-none">
+                        {{ problem.input_format|safe }}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Output Format -->
+                {% if problem.output_format %}
+                <div class="mb-4 sm:mb-6">
+                    <h3 class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100 mb-2 sm:mb-3">Output Format</h3>
+                    <div class="text-gray-700 dark:text-gray-300 leading-relaxed prose prose-sm sm:prose max-w-none">
+                        {{ problem.output_format|safe }}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Constraints -->
+                {% if problem.constraints %}
+                <div class="mb-4 sm:mb-6">
+                    <h3 class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100 mb-2 sm:mb-3">Constraints</h3>
+                    <div class="text-gray-700 dark:text-gray-300 leading-relaxed prose prose-sm sm:prose max-w-none">
+                        {{ problem.constraints|safe }}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Sample Input/Output -->
+                {% if problem.sample_input and problem.sample_output %}
+                <div class="mb-4 sm:mb-6">
+                    <h3 class="text-base sm:text-lg font-medium text-gray-900 mb-2 sm:mb-3">Example</h3>
+                    <div class="border border-gray-200 rounded-lg overflow-hidden">
+                        <!-- Mobile: Stacked Layout -->
+                        <div class="block sm:hidden">
+                            <div class="bg-gray-50 px-3 py-2 border-b border-gray-200">
+                                <div class="text-xs font-medium text-gray-700">Input</div>
+                            </div>
+                            <div class="px-3 py-2 border-b border-gray-200">
+                                <div class="text-gray-700 leading-relaxed prose prose-sm max-w-none">{{ problem.sample_input|safe }}</div>
+                            </div>
+                            <div class="bg-gray-50 px-3 py-2 border-b border-gray-200">
+                                <div class="text-xs font-medium text-gray-700">Output</div>
+                            </div>
+                            <div class="px-3 py-2">
+                                <div class="text-gray-700 leading-relaxed prose prose-sm max-w-none">{{ problem.sample_output|safe }}</div>
+                            </div>
+                        </div>
+                        <!-- Desktop: Table Layout -->
+                        <table class="w-full hidden sm:table">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-r border-gray-200 w-1/2">Input</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 w-1/2">Output</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-t border-gray-200">
+                                    <td class="px-4 py-3 border-r border-gray-200 w-1/2 align-top">
+                                        <div class="text-gray-700 leading-relaxed prose prose-sm sm:prose max-w-none">{{ problem.sample_input|safe }}</div>
+                                    </td>
+                                    <td class="px-4 py-3 w-1/2 align-top">
+                                        <div class="text-gray-700 leading-relaxed prose prose-sm sm:prose max-w-none">{{ problem.sample_output|safe }}</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Note -->
+                {% if problem.note %}
+                <div class="mb-4 sm:mb-6">
+                    <h3 class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100 mb-2 sm:mb-3">Note</h3>
+                    <div class="text-gray-700 dark:text-gray-300 leading-relaxed text-sm sm:text-base">
+                        {{ problem.note|linebreaks }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Resizable Divider -->
+        <div id="divider" class="hidden lg:block w-1 bg-gray-300 dark:bg-gray-600 cursor-col-resize hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors flex-shrink-0"></div>
+
+        <!-- Code Editor Panel -->
+        <div id="editorPanel" class="w-full lg:w-1/2 bg-white dark:bg-gray-800 flex flex-col lg:overflow-hidden">
+            {% if user.is_authenticated %}
+                <!-- Editor Header -->
+                <div class="border-b border-gray-200 dark:border-gray-700 p-3 sm:p-4 flex-shrink-0">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <select id="language" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm w-full sm:w-auto">
+                            <option value="c">C</option>
+                            <option value="cpp">C++</option>
+                            <option value="python">Python</option>
+                        </select>
+                        <div class="flex gap-2">
+                            <button id="testBtn" class="flex-1 sm:flex-none px-3 py-2 bg-gray-200 text-gray-900 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 rounded text-sm font-medium">
+                                <i class="fas fa-play mr-1"></i>Test
+                            </button>
+                            <button id="submitBtn" class="flex-1 sm:flex-none px-3 py-2 bg-green-600 text-white hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 rounded text-sm font-medium">
+                                <i class="fas fa-paper-plane mr-1"></i>Submit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- IDE Split Pane Layout -->
+                <div class="flex-1 flex flex-col" style="height: 100%;">
+                    <!-- Editor Pane -->
+                    <div id="editorPane" style="height: 50%; min-height: 250px; overflow: hidden;">
+                        <div id="editor" style="height: 100%; width: 100%; min-height: 250px;"></div>
+                    </div>
+
+                    <!-- Draggable Resizer Bar -->
+                    <div id="resizer" class="hidden" style="height: 5px; background: #ccc; cursor: row-resize; user-select: none;"></div>
+
+                    <!-- Console/Results Pane -->
+                    <div id="resultPanel" class="bg-gray-50 dark:bg-gray-700 flex flex-col hidden" style="height: 50%; min-height: 150px; overflow-y: auto;">
+                    <!-- Panel Header -->
+                    <div class="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-600">
+                        <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100">Results</h4>
+                        <button id="closeResultPanel" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Default State -->
+                    <div id="defaultState" class="p-3 sm:p-4 flex-1 flex items-center justify-center">
+                        <div class="text-gray-600 dark:text-gray-400 text-center">
+                            <i class="fas fa-code text-xl sm:text-2xl mb-2"></i>
+                            <div class="font-medium text-sm sm:text-base">Ready to test your code</div>
+                            <div class="text-xs sm:text-sm mt-1">Click Test to run against sample cases or Submit for full evaluation</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Loading State -->
+                    <div id="loadingState" class="p-3 sm:p-4 flex-1 flex items-center justify-center hidden">
+                        <div class="text-center w-full max-w-xs">
+                            <div class="loading loading-spinner loading-md text-indigo-500 mb-3"></div>
+                            <div class="font-medium text-gray-900 dark:text-gray-100 mb-2 text-sm sm:text-base" id="loadingText">Compiling Code...</div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 mb-3">
+                                <div id="progressBar" class="bg-indigo-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                            <div class="text-xs text-gray-600 dark:text-gray-400" id="progressText">Initializing...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Result State -->
+                    <div id="resultState" class="p-2 flex-1 overflow-y-auto hidden">
+                        <div id="resultContent">
+                            <!-- Results will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="flex-1 flex items-center justify-center overflow-hidden p-4">
+                    <div class="text-center">
+                        <h3 class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Login Required</h3>
+                        <p class="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-4">Please login to solve this problem</p>
+                        <a href="{% url 'accounts:login' %}" class="px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded font-medium text-sm sm:text-base">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Login
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if user.is_authenticated %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+<script>
+require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }});
+
+let editor;
+let isResizing = false;
+
+// Initialize Monaco Editor
+require(['vs/editor/editor.main'], function () {
+    editor = monaco.editor.create(document.getElementById('editor'), {
+        value: '#include <stdio.h>\n\nint main() {\n    // Your code here\n    return 0;\n}',
+        language: 'c',
+        theme: document.documentElement.classList.contains('dark') ? 'vs-dark' : 'vs',
+        automaticLayout: true,
+        fontSize: window.innerWidth < 640 ? 14 : 16,
+        lineHeight: window.innerWidth < 640 ? 18 : 20,
+        minimap: { enabled: window.innerWidth >= 1024 },
+        scrollBeyondLastLine: false,
+        wordWrap: window.innerWidth < 1024 ? 'on' : 'off',
+        lineNumbers: 'on',
+        glyphMargin: true,
+        folding: true,
+        renderLineHighlight: 'all',
+        selectOnLineNumbers: true,
+        roundedSelection: false,
+        readOnly: false,
+        cursorStyle: 'line',
+        automaticLayout: true,
+        scrollbar: {
+            vertical: 'auto',
+            horizontal: 'auto',
+            alwaysConsumeMouseWheel: false,
+            verticalScrollbarSize: window.innerWidth < 640 ? 8 : 12,
+            horizontalScrollbarSize: window.innerWidth < 640 ? 8 : 12
+        },
+        overviewRulerLanes: 0,
+        hideCursorInOverviewRuler: true,
+        overviewRulerBorder: false
+    });
+    
+    // Language change handler
+    document.getElementById('language').addEventListener('change', function() {
+        const lang = this.value;
+        monaco.editor.setModelLanguage(editor.getModel(), lang);
+        
+        if (lang === 'c') {
+            editor.setValue('#include <stdio.h>\n\nint main() {\n    // Your code here\n    return 0;\n}');
+        } else if (lang === 'cpp') {
+            editor.setValue('#include <iostream>\nusing namespace std;\n\nint main() {\n    // Your code here\n    return 0;\n}');
+        } else if (lang === 'python') {
+            editor.setValue('# Your Python code here\n\n');
+        }
+    });
+    
+    // Handle window resize for responsive editor
+    window.addEventListener('resize', function() {
+        if (editor) {
+            editor.updateOptions({
+                fontSize: window.innerWidth < 640 ? 14 : 16,
+                lineHeight: window.innerWidth < 640 ? 18 : 20,
+                minimap: { enabled: window.innerWidth >= 1024 },
+                wordWrap: window.innerWidth < 1024 ? 'on' : 'off',
+                scrollbar: {
+                    verticalScrollbarSize: window.innerWidth < 640 ? 8 : 12,
+                    horizontalScrollbarSize: window.innerWidth < 640 ? 8 : 12
+                }
+            });
+            editor.layout();
+        }
+    });
+});
+
+// Resizable panels (desktop only)
+const divider = document.getElementById('divider');
+const problemPanel = document.getElementById('problemPanel');
+const editorPanel = document.getElementById('editorPanel');
+
+// Only enable resizing on desktop
+if (window.innerWidth >= 1024) {
+    divider.addEventListener('mousedown', function(e) {
+        isResizing = true;
+        document.addEventListener('mousemove', handleResize);
+        document.addEventListener('mouseup', stopResize);
+        e.preventDefault();
+    });
+}
+
+function handleResize(e) {
+    if (!isResizing || window.innerWidth < 1024) return;
+    
+    const container = divider.parentElement;
+    const containerRect = container.getBoundingClientRect();
+    const percentage = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+    
+    if (percentage > 20 && percentage < 80) {
+        problemPanel.style.width = percentage + '%';
+        editorPanel.style.width = (100 - percentage) + '%';
+    }
+}
+
+function stopResize() {
+    isResizing = false;
+    document.removeEventListener('mousemove', handleResize);
+    document.removeEventListener('mouseup', stopResize);
+}
+
+// Test button handler
+document.getElementById('testBtn').addEventListener('click', function() {
+    const code = editor.getValue();
+    const language = document.getElementById('language').value;
+    
+    if (!code.trim()) {
+        alert('Please write some code first!');
+        return;
+    }
+    
+    // Show result panel immediately
+    showResultPanel();
+    showLoadingState();
+    
+    this.disabled = true;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Testing...';
+    
+    fetch('{% url "submissions:test_code" problem.slug %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            code: code,
+            language: language
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        showResult(data, 'test');
+        this.disabled = false;
+        this.innerHTML = '<i class="fas fa-play mr-1"></i>Test';
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showError('Network error occurred');
+        this.disabled = false;
+        this.innerHTML = '<i class="fas fa-play mr-1"></i>Test';
+    });
+});
+
+// Submit button handler
+document.getElementById('submitBtn').addEventListener('click', function() {
+    const code = editor.getValue();
+    const language = document.getElementById('language').value;
+    
+    if (!code.trim()) {
+        alert('Please write some code first!');
+        return;
+    }
+    
+    // Show result panel immediately
+    showResultPanel();
+    showLoadingState();
+    
+    this.disabled = true;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Submitting...';
+    
+    fetch('{% url "submissions:submit_ajax" problem.slug %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            code: code,
+            language: language
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        showResult(data, 'submit');
+        this.disabled = false;
+        this.innerHTML = '<i class="fas fa-paper-plane mr-1"></i>Submit';
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showError('Network error occurred');
+        this.disabled = false;
+        this.innerHTML = '<i class="fas fa-paper-plane mr-1"></i>Submit';
+    });
+});
+
+// Result display functions
+function showResultPanel() {
+    document.getElementById('resultPanel').classList.remove('hidden');
+    document.getElementById('resizer').classList.remove('hidden');
+    document.getElementById('editorPane').style.height = '40%';
+    document.getElementById('resultPanel').style.height = '60%';
+    
+    // Scroll to result panel on mobile
+    if (window.innerWidth < 1024) {
+        document.getElementById('resultPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    
+    // Trigger Monaco editor resize
+    setTimeout(() => {
+        if (editor) editor.layout();
+    }, 100);
+}
+
+function showLoadingState() {
+    document.getElementById('defaultState').classList.add('hidden');
+    document.getElementById('resultState').classList.add('hidden');
+    document.getElementById('loadingState').classList.remove('hidden');
+    
+    // Start progress animation
+    startProgressAnimation();
+}
+
+// Close result panel
+document.getElementById('closeResultPanel').addEventListener('click', function() {
+    document.getElementById('resultPanel').classList.add('hidden');
+    document.getElementById('resizer').classList.add('hidden');
+    document.getElementById('editorPane').style.height = '100%';
+});
+
+// Split pane resizer
+let isDragging = false;
+
+document.getElementById('resizer').addEventListener('mousedown', function(e) {
+    isDragging = true;
+    document.addEventListener('mousemove', handleDrag);
+    document.addEventListener('mouseup', stopDrag);
+    e.preventDefault();
+});
+
+function handleDrag(e) {
+    if (!isDragging) return;
+    
+    const container = document.getElementById('editorPanel');
+    const containerRect = container.getBoundingClientRect();
+    const headerHeight = 60;
+    const newEditorHeight = e.clientY - containerRect.top - headerHeight;
+    const containerHeight = containerRect.height - headerHeight;
+    
+    const minEditorHeight = 150;
+    const maxEditorHeight = containerHeight - 100;
+    
+    if (newEditorHeight >= minEditorHeight && newEditorHeight <= maxEditorHeight) {
+        const editorPercentage = (newEditorHeight / containerHeight) * 100;
+        const resultPercentage = 100 - editorPercentage;
+        
+        document.getElementById('editorPane').style.height = editorPercentage + '%';
+        document.getElementById('resultPanel').style.height = resultPercentage + '%';
+    }
+}
+
+function stopDrag() {
+    isDragging = false;
+    document.removeEventListener('mousemove', handleDrag);
+    document.removeEventListener('mouseup', stopDrag);
+}
+
+function startProgressAnimation() {
+    const progressBar = document.getElementById('progressBar');
+    const loadingText = document.getElementById('loadingText');
+    const progressText = document.getElementById('progressText');
+    
+    const steps = [
+        { progress: 20, text: 'Compiling Code...', detail: 'Checking syntax and building executable...' },
+        { progress: 50, text: 'Running Tests...', detail: 'Executing against test cases...' },
+        { progress: 80, text: 'Analyzing Results...', detail: 'Comparing outputs and calculating metrics...' },
+        { progress: 100, text: 'Finalizing...', detail: 'Preparing final verdict...' }
+    ];
+    
+    let currentStep = 0;
+    
+    function updateProgress() {
+        if (currentStep < steps.length) {
+            const step = steps[currentStep];
+            progressBar.style.width = step.progress + '%';
+            loadingText.textContent = step.text;
+            progressText.textContent = step.detail;
+            currentStep++;
+            setTimeout(updateProgress, 800);
+        }
+    }
+    
+    // Start with initial state
+    progressBar.style.width = '10%';
+    progressText.textContent = 'Preparing submission...';
+    setTimeout(updateProgress, 300);
+}
+
+function showResult(data, type) {
+    document.getElementById('defaultState').classList.add('hidden');
+    document.getElementById('loadingState').classList.add('hidden');
+    document.getElementById('resultState').classList.remove('hidden');
+    
+    const resultContent = document.getElementById('resultContent');
+    const verdict = data.verdict || 'UNKNOWN';
+    
+    let verdictClass = 'text-gray-600';
+    let verdictIcon = 'fas fa-question-circle';
+    let verdictText = verdict;
+    
+    switch(verdict) {
+        case 'QUEUED':
+            verdictClass = 'text-blue-500';
+            verdictIcon = 'fas fa-clock';
+            verdictText = 'Queued';
+            break;
+        case 'JUDGING':
+            verdictClass = 'text-yellow-500';
+            verdictIcon = 'fas fa-spinner fa-spin';
+            verdictText = 'Judging';
+            break;
+        case 'AC':
+            verdictClass = 'text-green-600 dark:text-green-400';
+            verdictIcon = 'fas fa-check-circle';
+            verdictText = 'Accepted';
+            break;
+        case 'WA':
+            verdictClass = 'text-red-600 dark:text-red-400';
+            verdictIcon = 'fas fa-times-circle';
+            verdictText = 'Wrong Answer';
+            break;
+        case 'CE':
+            verdictClass = 'text-yellow-600 dark:text-yellow-400';
+            verdictIcon = 'fas fa-exclamation-triangle';
+            verdictText = 'Compilation Error';
+            break;
+        case 'RE':
+            verdictClass = 'text-orange-600 dark:text-orange-400';
+            verdictIcon = 'fas fa-exclamation-circle';
+            verdictText = 'Runtime Error';
+            break;
+        case 'TLE':
+            verdictClass = 'text-purple-600 dark:text-purple-400';
+            verdictIcon = 'fas fa-clock';
+            verdictText = 'Time Limit Exceeded';
+            break;
+        case 'MLE':
+            verdictClass = 'text-blue-600 dark:text-blue-400';
+            verdictIcon = 'fas fa-memory';
+            verdictText = 'Memory Limit Exceeded';
+            break;
+        case 'PE':
+            verdictClass = 'text-gray-600 dark:text-gray-400';
+            verdictIcon = 'fas fa-align-left';
+            verdictText = 'Presentation Error';
+            break;
+        default:
+            verdictClass = 'text-gray-600';
+            verdictIcon = 'fas fa-question-circle';
+            verdictText = 'Unknown';
+            break;
+    }
+    
+    let html = `
+        <div class="space-y-4">
+            <div class="flex items-center gap-3">
+                <i class="${verdictIcon} ${verdictClass} text-2xl"></i>
+                <div>
+                    <h4 class="text-lg font-bold ${verdictClass}">${verdictText}</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">${type === 'test' ? 'Sample Test Result' : 'Final Verdict'}</p>
+                </div>
+            </div>
+    `;
+    
+    // Show time and memory stats only for submit mode
+    if (type === 'submit') {
+        html += `
+            <div class="grid grid-cols-2 gap-2">
+                <div class="bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                    <div class="text-xs text-gray-600 dark:text-gray-400">Time</div>
+                    <div class="font-semibold text-gray-900 dark:text-gray-100 text-xs">${((data.execution_time || 0) * 1000).toFixed(1)}ms</div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                    <div class="text-xs text-gray-600 dark:text-gray-400">Memory</div>
+                    <div class="font-semibold text-gray-900 dark:text-gray-100 text-xs">${data.memory_used || 0}KB</div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Show test case progress for both test and submit
+    const testPassed = data.test_cases_passed || 0;
+    const testTotal = data.total_test_cases || (type === 'test' ? 1 : 0);
+    if (testTotal > 0) {
+        const passRate = (testPassed / testTotal) * 100;
+        const testLabel = type === 'test' ? 'Sample Test Cases' : 'Test Cases';
+        html += `
+            <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">${testLabel}</div>
+                <div class="font-semibold text-gray-900 dark:text-gray-100">${testPassed}/${testTotal} passed</div>
+                <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 mt-2">
+                    <div class="bg-green-500 h-2 rounded-full" style="width: ${passRate}%"></div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Show error details only for submit, not for test
+    if (type === 'submit' && data.error_message && (verdict === 'CE' || verdict === 'RE')) {
+        html += `
+            <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-2">
+                <div class="text-xs text-red-600 dark:text-red-400 mb-1">Error Details</div>
+                <pre class="text-xs text-red-800 dark:text-red-300 whitespace-pre-wrap font-mono">${data.error_message}</pre>
+            </div>
+        `;
+    }
+    
+    html += '</div>';
+    
+    resultContent.innerHTML = html;
+}
+
+function showError(message) {
+    document.getElementById('defaultState').classList.add('hidden');
+    document.getElementById('loadingState').classList.add('hidden');
+    document.getElementById('resultState').classList.remove('hidden');
+    
+    document.getElementById('resultContent').innerHTML = `
+        <div class="text-center text-red-600 dark:text-red-400 p-4">
+            <i class="fas fa-exclamation-triangle text-3xl mb-3"></i>
+            <div class="font-medium text-lg mb-2">Submission Failed</div>
+            <div class="text-sm text-gray-600 dark:text-gray-400">${message}</div>
+            <button onclick="location.reload()" class="mt-3 btn btn-sm bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-300">
+                <i class="fas fa-redo mr-1"></i>Try Again
+            </button>
+        </div>
+    `;
+}
+</script>
+{% endif %}
+{% endblock %}

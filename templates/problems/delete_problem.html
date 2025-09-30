@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Problem{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-4 sm:py-8">
+    <!-- Header -->
+    <div class="mb-6 sm:mb-8">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
+            <div class="text-center sm:text-left">
+                <h1 class="text-2xl sm:text-3xl font-bold text-red-600 mb-1 sm:mb-2">Delete Problem</h1>
+                <p class="text-sm sm:text-base text-gray-600">This action cannot be undone</p>
+            </div>
+            <a href="{% url 'problems:admin_problems' %}" class="btn btn-outline btn-sm self-center sm:self-auto">
+                <i class="fas fa-arrow-left mr-1"></i>Back
+            </a>
+        </div>
+    </div>
+
+    <!-- Confirmation Card -->
+    <div class="bg-white rounded-lg shadow-md border border-red-200">
+        <div class="p-4 sm:p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center mb-4 sm:mb-6">
+                <div class="bg-red-100 p-3 rounded-full mx-auto sm:mx-0 sm:mr-4 mb-4 sm:mb-0">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-lg sm:text-xl"></i>
+                </div>
+                <div class="text-center sm:text-left">
+                    <h2 class="text-lg sm:text-xl font-semibold text-gray-900">Confirm Deletion</h2>
+                    <p class="text-sm sm:text-base text-gray-600">Are you sure you want to delete this problem?</p>
+                </div>
+            </div>
+            
+            <div class="bg-gray-50 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+                <h3 class="font-semibold text-gray-900 mb-2 text-sm sm:text-base">{{ problem.title }}</h3>
+                <div class="text-xs sm:text-sm text-gray-600 space-y-1">
+                    <p><strong>Category:</strong> {{ problem.category.name }}</p>
+                    <p><strong>Difficulty:</strong> {{ problem.difficulty }}</p>
+                    <p><strong>Created:</strong> {{ problem.created_at|date:"M d, Y" }}</p>
+                </div>
+            </div>
+            
+            <div class="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+                <div class="flex items-start">
+                    <i class="fas fa-exclamation-circle text-red-500 mt-1 mr-2 flex-shrink-0"></i>
+                    <div class="text-xs sm:text-sm text-red-700">
+                        <p class="font-medium mb-1">Warning:</p>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>This will permanently delete the problem</li>
+                            <li>All associated test cases will be deleted</li>
+                            <li>All submissions for this problem will be deleted</li>
+                            <li>This action cannot be undone</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <form method="post" class="flex flex-col sm:flex-row gap-3">
+                {% csrf_token %}
+                <button type="submit" class="bg-red-600 text-white px-6 py-2 sm:py-3 rounded hover:bg-red-700 text-sm sm:text-base flex items-center justify-center gap-2">
+                    <i class="fas fa-trash"></i>Yes, Delete Problem
+                </button>
+                <a href="{% url 'problems:admin_problems' %}" class="bg-gray-200 text-gray-700 px-6 py-2 sm:py-3 rounded hover:bg-gray-300 text-sm sm:text-base flex items-center justify-center">
+                    Cancel
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

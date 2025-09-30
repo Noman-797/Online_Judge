@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - Semicolons{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto px-4 py-8">
+    <div class="card bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 p-8">
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Welcome Back</h1>
+            <p class="text-gray-600 dark:text-gray-400">Sign in to your account</p>
+        </div>
+        
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            
+            <div>
+                <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    Username
+                </label>
+                <input type="text" name="username" id="{{ form.username.id_for_label }}" 
+                       value="{{ form.username.value|default:'' }}"
+                       class="input input-bordered w-full bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 placeholder-gray-600 dark:placeholder-gray-400"
+                       placeholder="Enter your username" required>
+                {% if form.username.errors %}
+                    <div class="text-sm text-red-600 mt-1">
+                        {{ form.username.errors.0 }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div>
+                <label for="{{ form.password.id_for_label }}" class="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    Password
+                </label>
+                <div class="relative">
+                    <input type="password" name="password" id="{{ form.password.id_for_label }}"
+                           class="input input-bordered w-full pr-10 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 placeholder-gray-600 dark:placeholder-gray-400"
+                           placeholder="Enter your password" required>
+                    <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center" onclick="togglePassword('{{ form.password.id_for_label }}')"
+                            id="toggle-{{ form.password.id_for_label }}">
+                        <i class="fas fa-eye text-gray-400 hover:text-gray-600"></i>
+                    </button>
+                </div>
+                {% if form.password.errors %}
+                    <div class="text-sm text-red-600 mt-1">
+                        {{ form.password.errors.0 }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            {% if form.non_field_errors %}
+                <div class="alert alert-error bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-100 border border-red-200 dark:border-red-600 rounded-lg p-3">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    {{ form.non_field_errors.0 }}
+                </div>
+            {% endif %}
+            
+            <button type="submit" class="btn w-full bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600">
+                <i class="fas fa-sign-in-alt mr-2"></i>
+                Sign In
+            </button>
+        </form>
+        
+        <div class="divider text-gray-600 dark:text-gray-400">OR</div>
+        
+        <div class="text-center">
+            <p class="text-gray-600 dark:text-gray-400 mb-4">
+                Don't have an account?
+            </p>
+            <a href="{% url 'accounts:register' %}" 
+               class="btn w-full bg-gray-200 text-gray-900 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
+                <i class="fas fa-user-plus mr-2"></i>
+                Create Account
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function togglePassword(fieldId) {
+    const passwordField = document.getElementById(fieldId);
+    const toggleButton = document.getElementById('toggle-' + fieldId);
+    const icon = toggleButton.querySelector('i');
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        passwordField.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+</script>
+{% endblock %}

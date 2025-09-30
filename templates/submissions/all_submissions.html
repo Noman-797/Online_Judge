@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}All Submissions - All About Semicolons{% endblock %}
+
+{% block content %}
+<div class="card bg-base-100 shadow-xl">
+    <div class="card-body">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="card-title">
+                <i class="fas fa-globe"></i>
+                All Submissions
+            </h2>
+            
+            <!-- Filters -->
+            <div class="flex gap-2">
+                <select class="select select-bordered select-sm" onchange="filterSubmissions(this.value)">
+                    <option value="">All Verdicts</option>
+                    <option value="AC" {% if current_verdict == 'AC' %}selected{% endif %}>Accepted</option>
+                    <option value="WA" {% if current_verdict == 'WA' %}selected{% endif %}>Wrong Answer</option>
+                    <option value="CE" {% if current_verdict == 'CE' %}selected{% endif %}>Compilation Error</option>
+                    <option value="RE" {% if current_verdict == 'RE' %}selected{% endif %}>Runtime Error</option>
+                    <option value="TLE" {% if current_verdict == 'TLE' %}selected{% endif %}>Time Limit Exceeded</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="table table-zebra">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>User</th>
+                        <th>Problem</th>
+                        <th>Language</th>
+                        <th>Verdict</th>
+                        <th>Time</th>
+                        <th>Memory</th>
+                        <th>Submitted</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for submission in submissions %}
+                        <tr>
+                            <td>
+                                {% if user.is_authenticated and submission.user == user %}
+                                    <a href="{% url 'submissions:submission_detail' submission.id %}" 
+                                       class="link link-primary">
+                                        #{{ submission.id }}
+                                    </a>
+                                {% else %}
+                                    #{{ submission.id }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="flex items-center gap-2">
+                                    <div class="avatar placeholder">
+                                        <div class="bg-primary text-primary-content rounded-full w-8">
+                                            <span class="text-xs">{{ submission.user.username.0|upper }}</span>
+                                        </div>
+                                    </div>
+                                    <span>{{ submission.user.username }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <a href="{% url 'problems:problem_detail' submission.problem.slug %}" 
+                                   class="link link-primary">
+                                    {{ submission.problem.title }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge badge-outline">{{ submission.get_language_display }}</span>
+                            </td>
+                            <td>
+                                <span class="badge {{ submission.get_verdict_display_class }}">
+                                    {{ submission.get_verdict_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if submission.execution_time %}
+                                    {{ submission.execution_time|floatformat:3 }}s
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if submission.memory_used %}
+                                    {{ submission.memory_used }}KB
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ submission.submitted_at|timesince }} ago</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center text-base-content/70">
+                                No submissions yet.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if submissions.has_other_pages %}
+            <div class="flex justify-center mt-6">
+                <div class="join">
+                    {% if submissions.has_previous %}
+                        <a href="?page={{ submissions.previous_page_number }}{% if current_verdict %}&verdict={{ current_verdict }}{% endif %}" 
+                           class="join-item btn">«</a>
+                    {% endif %}
+                    
+                    {% for num in submissions.paginator.page_range %}
+                        {% if submissions.number == num %}
+                            <span class="join-item btn btn-active">{{ num }}</span>
+                        {% else %}
+                            <a href="?page={{ num }}{% if current_verdict %}&verdict={{ current_verdict }}{% endif %}" 
+                               class="join-item btn">{{ num }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if submissions.has_next %}
+                        <a href="?page={{ submissions.next_page_number }}{% if current_verdict %}&verdict={{ current_verdict }}{% endif %}" 
+                           class="join-item btn">»</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function filterSubmissions(verdict) {
+    const url = new URL(window.location);
+    if (verdict) {
+        url.searchParams.set('verdict', verdict);
+    } else {
+        url.searchParams.delete('verdict');
+    }
+    url.searchParams.delete('page'); // Reset to first page
+    window.location.href = url.toString();
+}
+</script>
+{% endblock %}

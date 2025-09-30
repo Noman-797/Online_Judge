@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+
+{% block title %}Monitor {{ contest.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4 sm:mb-6">
+        <h1 class="text-lg sm:text-2xl lg:text-3xl font-bold text-center sm:text-left">Monitor: {{ contest.title }}</h1>
+        <a href="{% url 'contests:admin_contests' %}" class="btn btn-outline btn-sm w-full sm:w-auto">
+            <i class="fas fa-arrow-left mr-1"></i>Back to Admin
+        </a>
+    </div>
+
+    <!-- Mobile Stats -->
+    <div class="grid grid-cols-2 gap-2 sm:hidden mb-4">
+        <div class="bg-blue-50 rounded-lg p-3 text-center">
+            <div class="text-xs text-gray-600">Participants</div>
+            <div class="text-lg font-bold text-blue-600">{{ participations.count }}</div>
+        </div>
+        <div class="bg-green-50 rounded-lg p-3 text-center">
+            <div class="text-xs text-gray-600">Submissions</div>
+            <div class="text-lg font-bold text-green-600">{{ recent_submissions|length }}</div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
+        <!-- Participants -->
+        <div class="bg-white rounded-lg shadow-md border">
+            <div class="p-3 sm:p-4 border-b bg-blue-50">
+                <h2 class="text-base sm:text-lg font-semibold text-blue-800 flex items-center gap-2">
+                    <i class="fas fa-users"></i>
+                    <span class="hidden sm:inline">Participants ({{ participations.count }})</span>
+                    <span class="sm:hidden">Users ({{ participations.count }})</span>
+                </h2>
+            </div>
+            
+            <!-- Desktop Table -->
+            <div class="hidden sm:block overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for participation in participations %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3">
+                                <a href="{% url 'contests:user_submissions' contest.slug participation.user.id %}" class="text-blue-600 hover:text-blue-800 font-medium">
+                                    {{ participation.user.username }}
+                                </a>
+                            </td>
+                            <td class="px-4 py-3">
+                                {% if participation.is_banned %}
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Banned</span>
+                                {% else %}
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3">
+                                {% if participation.is_banned %}
+                                    <a href="{% url 'contests:unban_participant' contest.slug participation.user.id %}" 
+                                       class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50" title="Unban">
+                                        <i class="fas fa-check"></i>
+                                    </a>
+                                {% else %}
+                                    <a href="{% url 'contests:ban_participant' contest.slug participation.user.id %}" 
+                                       class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50" title="Ban">
+                                        <i class="fas fa-ban"></i>
+                                    </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Mobile Cards -->
+            <div class="sm:hidden divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                {% for participation in participations %}
+                <div class="p-3">
+                    <div class="flex justify-between items-center">
+                        <div class="flex-1">
+                            <a href="{% url 'contests:user_submissions' contest.slug participation.user.id %}" class="text-blue-600 font-medium text-sm">
+                                {{ participation.user.username }}
+                            </a>
+                            <div class="mt-1">
+                                {% if participation.is_banned %}
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Banned</span>
+                                {% else %}
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div>
+                            {% if participation.is_banned %}
+                                <a href="{% url 'contests:unban_participant' contest.slug participation.user.id %}" 
+                                   class="bg-green-100 text-green-800 p-2 rounded-full hover:bg-green-200">
+                                    <i class="fas fa-check text-xs"></i>
+                                </a>
+                            {% else %}
+                                <a href="{% url 'contests:ban_participant' contest.slug participation.user.id %}" 
+                                   class="bg-red-100 text-red-800 p-2 rounded-full hover:bg-red-200">
+                                    <i class="fas fa-ban text-xs"></i>
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Submissions -->
+        <div class="bg-white rounded-lg shadow-md border">
+            <div class="p-3 sm:p-4 border-b bg-green-50">
+                <h2 class="text-base sm:text-lg font-semibold text-green-800 flex items-center gap-2">
+                    <i class="fas fa-code"></i>
+                    <span class="hidden sm:inline">Recent Submissions</span>
+                    <span class="sm:hidden">Submissions</span>
+                </h2>
+            </div>
+            
+            <!-- Desktop Table -->
+            <div class="hidden lg:block overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Problem</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Verdict</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for submission in recent_submissions %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ submission.user.username }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-700">{{ submission.problem.title|truncatechars:20 }}</td>
+                            <td class="px-4 py-3">
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {% if submission.verdict == 'AC' %}bg-green-100 text-green-800{% elif submission.verdict == 'WA' %}bg-red-100 text-red-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                    {{ submission.verdict }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-500">{{ submission.submitted_at|date:"H:i" }}</td>
+                            <td class="px-4 py-3">
+                                <a href="{% url 'contests:view_code' submission.id %}?contest={{ contest.slug }}" 
+                                   class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50" title="View Code">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Mobile/Tablet Cards -->
+            <div class="lg:hidden divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                {% for submission in recent_submissions %}
+                <div class="p-3">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-medium text-gray-900 truncate">{{ submission.user.username }}</div>
+                            <div class="text-xs text-gray-600 truncate">{{ submission.problem.title }}</div>
+                        </div>
+                        <div class="flex items-center gap-2 ml-2">
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {% if submission.verdict == 'AC' %}bg-green-100 text-green-800{% elif submission.verdict == 'WA' %}bg-red-100 text-red-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                {{ submission.verdict }}
+                            </span>
+                            <a href="{% url 'contests:view_code' submission.id %}?contest={{ contest.slug }}" 
+                               class="bg-blue-100 text-blue-800 p-2 rounded-full hover:bg-blue-200">
+                                <i class="fas fa-eye text-xs"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-500">{{ submission.submitted_at|date:"H:i:s" }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

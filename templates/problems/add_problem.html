@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Problem - Admin - All About Semicolons{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-4 sm:py-6">
+    <div class="bg-white rounded-lg shadow-xl border">
+        <div class="p-4 sm:p-6">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+                <h2 class="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <i class="fas fa-plus"></i>
+                    Add New Problem
+                </h2>
+                <a href="{% url 'problems:admin_problems' %}" class="btn btn-outline btn-sm self-start sm:self-auto">
+                    <i class="fas fa-arrow-left mr-1"></i>Back
+                </a>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div class="form-control">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Title
+                        </label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <p class="text-red-600 text-sm mt-1">{{ form.title.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Slug
+                        </label>
+                        {{ form.slug }}
+                        {% if form.slug.errors %}
+                            <p class="text-red-600 text-sm mt-1">{{ form.slug.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-control mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Description
+                    </label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <p class="text-red-600 text-sm mt-1">{{ form.description.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div class="form-control">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Input Format
+                        </label>
+                        {{ form.input_format }}
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Output Format
+                        </label>
+                        {{ form.output_format }}
+                    </div>
+                </div>
+                
+                <div class="form-control mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Constraints
+                    </label>
+                    {{ form.constraints }}
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div class="form-control">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Sample Input
+                        </label>
+                        {{ form.sample_input }}
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Sample Output
+                        </label>
+                        {{ form.sample_output }}
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                    <div class="form-control">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Difficulty
+                        </label>
+                        {{ form.difficulty }}
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Time Limit (s)
+                        </label>
+                        {{ form.time_limit }}
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Memory Limit (MB)
+                        </label>
+                        {{ form.memory_limit }}
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Category
+                        </label>
+                        {{ form.category }}
+                    </div>
+                </div>
+                
+                <div class="form-control mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Tags
+                    </label>
+                    {{ form.tags }}
+                    <p class="text-sm text-gray-500 mt-1">
+                        Comma-separated tags (e.g., arrays, sorting, dynamic programming)
+                    </p>
+                </div>
+                
+                <div class="form-control mb-6">
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        {{ form.contest_only }}
+                        <div>
+                            <span class="text-sm font-medium text-gray-700">Contest Only (Hide from public problem list)</span>
+                            <p class="text-sm text-gray-500 mt-1">Check this to make the problem visible only in contests</p>
+                        </div>
+                    </label>
+                </div>
+                
+                <div class="form-control">
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2 flex-1">
+                            <i class="fas fa-save"></i>
+                            Create Problem
+                        </button>
+                        <a href="{% url 'problems:admin_problems' %}" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 flex items-center justify-center gap-2 flex-1">
+                            Cancel
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+<script>
+const fields = ['description', 'input_format', 'output_format', 'constraints', 'sample_input', 'sample_output'];
+const editors = {};
+
+fields.forEach(field => {
+    const textarea = document.querySelector(`textarea[name="${field}"]`);
+    const editorDiv = document.createElement('div');
+    editorDiv.innerHTML = textarea.value;
+    textarea.style.display = 'none';
+    textarea.parentNode.insertBefore(editorDiv, textarea);
+    
+    editors[field] = new Quill(editorDiv, {
+        theme: 'snow',
+        modules: {
+            toolbar: [['bold', 'italic', 'underline'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['code-block']]
+        }
+    });
+    
+    editors[field].on('text-change', () => {
+        textarea.value = editors[field].root.innerHTML;
+    });
+});
+
+// Auto-generate slug from title
+document.querySelector('input[name="title"]').addEventListener('input', function() {
+    const title = this.value;
+    const slug = title.toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .trim('-');
+    document.querySelector('input[name="slug"]').value = slug;
+});
+</script>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}View Code - {{ submission.user.username }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold">Code Submission</h1>
+        <button onclick="history.back()" class="btn btn-outline">Back</button>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <p><strong>User:</strong> {{ submission.user.username }}</p>
+                    <p><strong>Problem:</strong> {{ submission.problem.title }}</p>
+                </div>
+                <div>
+                    <p><strong>Language:</strong> {{ submission.get_language_display }}</p>
+                    <p><strong>Verdict:</strong> 
+                        <span class="badge {% if submission.verdict == 'AC' %}badge-success{% elif submission.verdict == 'WA' %}badge-error{% else %}badge-warning{% endif %}">
+                            {{ submission.verdict }}
+                        </span>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <h3 class="text-lg font-semibold mb-2">Source Code:</h3>
+            <div class="mockup-code">
+                <pre><code>{{ submission.code }}</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}Problems - Semicolons{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <div class="mb-6 sm:mb-8">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Problems</h1>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-4 gap-6 lg:gap-8">
+        <!-- Search/Filter Sidebar -->
+        <div class="xl:col-span-1">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 xl:sticky xl:top-24">
+                <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Filters</h3>
+            <form method="get" class="space-y-3 sm:space-y-4">
+                <div>
+                    <label class="block text-xs sm:text-sm font-medium text-gray-900 mb-2">Difficulty</label>
+                    <select name="difficulty" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">All Difficulties</option>
+                        <option value="Easy" {% if request.GET.difficulty == 'Easy' %}selected{% endif %}>Easy</option>
+                        <option value="Medium" {% if request.GET.difficulty == 'Medium' %}selected{% endif %}>Medium</option>
+                        <option value="Hard" {% if request.GET.difficulty == 'Hard' %}selected{% endif %}>Hard</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-xs sm:text-sm font-medium text-gray-900 mb-2">Category</label>
+                    <select name="category" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-xs sm:text-sm font-medium text-gray-900 mb-2">Search</label>
+                    <input type="text" name="search" value="{{ request.GET.search }}" 
+                           placeholder="Search problems..." 
+                           class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                
+                <div class="space-y-2">
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 font-medium text-sm">
+                        <i class="fas fa-search mr-2"></i>Filter
+                    </button>
+                    {% if request.GET %}
+                        <a href="{% url 'problems:problem_list' %}" 
+                           class="block w-full text-center bg-gray-200 text-gray-900 py-2 rounded-lg hover:bg-gray-300 font-medium text-sm">
+                            Clear
+                        </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+        <!-- Problems Table -->
+        <div class="xl:col-span-3">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full min-w-full">
+                        <thead class="bg-gray-50">
+                <tr>
+                            <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                            <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Difficulty</th>
+                            <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Category</th>
+                            <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Time Limit</th>
+                            <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for problem in problems %}
+                            <tr class="hover:bg-gray-50 border-b border-gray-200">
+                                <td class="px-3 sm:px-6 py-4">
+                                    <div class="font-medium text-gray-900 text-sm sm:text-base">{{ problem.title }}</div>
+                                    <div class="sm:hidden mt-1 flex items-center gap-2">
+                                        {% if problem.difficulty == 'Easy' %}
+                                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Easy</span>
+                                        {% elif problem.difficulty == 'Medium' %}
+                                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Medium</span>
+                                        {% else %}
+                                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Hard</span>
+                                        {% endif %}
+                                        <span class="text-xs text-gray-500">{{ problem.category.name }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-3 sm:px-6 py-4 hidden sm:table-cell">
+                                    {% if problem.difficulty == 'Easy' %}
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Easy</span>
+                                    {% elif problem.difficulty == 'Medium' %}
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Medium</span>
+                                    {% else %}
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Hard</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 sm:px-6 py-4 text-gray-600 text-sm hidden md:table-cell">{{ problem.category.name }}</td>
+                                <td class="px-3 sm:px-6 py-4 text-gray-600 text-sm hidden lg:table-cell">{{ problem.time_limit }}s</td>
+                                <td class="px-3 sm:px-6 py-4">
+                                    <a href="{% url 'problems:problem_detail' problem.slug %}" 
+                                       class="bg-indigo-600 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm hover:bg-indigo-700 w-full sm:w-auto text-center inline-block">
+                                        <i class="fas fa-eye mr-1"></i>View
+                                    </a>
+                                </td>
+                            </tr>
+                {% empty %}
+                            <tr>
+                                <td colspan="5" class="px-3 sm:px-6 py-8 sm:py-12 text-center text-gray-600">
+                                    <i class="fas fa-search text-3xl sm:text-4xl mb-3 sm:mb-4 block"></i>
+                                    <div class="text-base sm:text-lg font-medium mb-2">No problems found</div>
+                                    <div class="text-sm">Try adjusting your search criteria</div>
+                                </td>
+                            </tr>
+                {% endfor %}
+            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if problems.has_other_pages %}
+    <div class="flex justify-center mt-6">
+        <div class="join">
+            {% if problems.has_previous %}
+                <a href="?page=1{% if request.GET.difficulty %}&difficulty={{ request.GET.difficulty }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" 
+                   class="join-item btn btn-sm">First</a>
+                <a href="?page={{ problems.previous_page_number }}{% if request.GET.difficulty %}&difficulty={{ request.GET.difficulty }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" 
+                   class="join-item btn btn-sm">Previous</a>
+            {% endif %}
+            
+            <span class="join-item btn btn-sm btn-active">
+                Page {{ problems.number }} of {{ problems.paginator.num_pages }}
+            </span>
+            
+            {% if problems.has_next %}
+                <a href="?page={{ problems.next_page_number }}{% if request.GET.difficulty %}&difficulty={{ request.GET.difficulty }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" 
+                   class="join-item btn btn-sm">Next</a>
+                <a href="?page={{ problems.paginator.num_pages }}{% if request.GET.difficulty %}&difficulty={{ request.GET.difficulty }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" 
+                   class="join-item btn btn-sm">Last</a>
+            {% endif %}
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
