@@ -32,7 +32,7 @@ def main():
         print(f"✓ Created directory: {directory}")
     
     # Install requirements
-    if not run_command("pip3.13 install --user -r requirements_pythonanywhere.txt", 
+    if not run_command("pip3.13 install --user -r requirements.txt", 
                       "Installing Python packages"):
         return
     
