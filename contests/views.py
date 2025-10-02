@@ -480,31 +480,9 @@ def contest_test_code(request, slug, problem_slug):
         )
         
         # Evaluate against sample test cases only
-        from judge.multi_language_evaluator import MultiLanguageEvaluator
-        evaluator = MultiLanguageEvaluator()
-        
-        # Get sample test cases only
-        sample_test_cases = problem.test_cases.filter(is_sample=True)
-        if not sample_test_cases.exists():
-            # If no sample test cases, use first test case
-            sample_test_cases = problem.test_cases.all()[:1]
-        
-        result = evaluator.evaluate_submission(
-            code=code,
-            language=language,
-            test_cases=sample_test_cases,
-            time_limit=problem.time_limit,
-            memory_limit=problem.memory_limit
-        )
-        
-        # Update temp submission with results
-        temp_submission.verdict = result['verdict']
-        temp_submission.execution_time = result.get('execution_time')
-        temp_submission.memory_used = result.get('memory_used')
-        temp_submission.compilation_error = result.get('compilation_error', '')
-        temp_submission.runtime_error = result.get('runtime_error', '')
-        temp_submission.test_cases_passed = result.get('test_cases_passed', 0)
-        temp_submission.total_test_cases = result.get('total_test_cases', 0)
+        from judge.evaluator import CodeEvaluator
+        evaluator = CodeEvaluator(temp_submission)
+        evaluator.evaluate(sample_only=True)
         
         return JsonResponse({
             'verdict': temp_submission.verdict,
@@ -565,20 +543,16 @@ def contest_submit_ajax(request, slug, problem_slug):
             language=language
         )
         
-        # Contest problems always use queue system
-        from judge.queue_manager import submission_queue
-        submission_queue.add_submission(submission.id)
-        
+        # Contest problems always queued for manual processing
         return JsonResponse({
             'verdict': 'QUEUED',
             'submission_id': submission.id,
-            'queue_position': submission_queue.get_queue_position(submission.id),
-            'queue_size': submission_queue.get_queue_size(),
             'execution_time': 0,
             'memory_used': 0,
             'test_cases_passed': 0,
             'total_test_cases': 0,
-            'error_message': None
+            'error_message': None,
+            'add_to_pending': True  # Signal to add to pending list
         })
         
     except json.JSONDecodeError:

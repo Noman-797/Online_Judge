@@ -161,7 +161,7 @@
                 
                 <div class="form-control mb-6">
                     <label class="flex items-start gap-3 cursor-pointer">
-                        {{ form.contest_only }}
+                        <input type="checkbox" name="contest_only" class="checkbox checkbox-primary" {% if form.contest_only.value %}checked{% endif %}>
                         <div>
                             <span class="text-sm font-medium text-gray-700">Contest Only (Hide from public problem list)</span>
                             <p class="text-sm text-gray-500 mt-1">Check this to make the problem visible only in contests</p>

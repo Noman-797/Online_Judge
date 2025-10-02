@@ -23,7 +23,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-2lk4o%wk*(2#$plf(#2iu
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'aasoj.pythonanywhere.com']
 
 
 
@@ -159,6 +159,12 @@ LOGOUT_REDIRECT_URL = '/'
 JUDGE_TEMP_DIR = BASE_DIR / 'temp'
 JUDGE_TIME_LIMIT = 2  # seconds
 JUDGE_MEMORY_LIMIT = 128  # MB
+ENABLE_MANUAL_QUEUE = True  # Enable manual queue for contest problems
+ENABLE_MANUAL_QUEUE = True  # Enable manual queue for contest problems
+ENABLE_MANUAL_QUEUE = True  # Enable manual queue for contest problems
+
+# Manual queue processing - ENABLED for contests
+ENABLE_MANUAL_QUEUE = True
 
 # Security settings for production
 if not DEBUG and 'PYTHONANYWHERE_DOMAIN' not in os.environ:

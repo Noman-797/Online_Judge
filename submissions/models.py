@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 from problems.models import Problem
 
 
@@ -89,3 +90,33 @@ class Submission(models.Model):
         elif self.verdict == 'AC':
             return 'Accepted - All test cases passed'
         return None
+    
+    @classmethod
+    def get_queued_submissions(cls, limit=None):
+        """Get queued submissions for manual processing"""
+        queryset = cls.objects.filter(verdict='QUEUED').order_by('submitted_at')
+        if limit:
+            queryset = queryset[:limit]
+        return queryset
+    
+    def process_submission(self):
+        """Process this queued submission"""
+        if self.verdict != 'QUEUED':
+            return False
+        
+        self.verdict = 'JUDGING'
+        self.save()
+        
+        try:
+            from judge.evaluator import CodeEvaluator
+            evaluator = CodeEvaluator(self)
+            evaluator.evaluate()
+            self.judged_at = timezone.now()
+            self.save()
+            return True
+        except Exception as e:
+            self.verdict = 'RE'
+            self.runtime_error = str(e)
+            self.judged_at = timezone.now()
+            self.save()
+            return False

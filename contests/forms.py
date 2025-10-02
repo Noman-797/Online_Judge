@@ -40,8 +40,9 @@ class ContestForm(forms.ModelForm):
 
 class ContestProblemForm(forms.ModelForm):
     problem = forms.ModelChoiceField(
-        queryset=Problem.objects.filter(is_active=True),
-        widget=forms.Select(attrs={'class': 'select select-bordered w-full'})
+        queryset=Problem.objects.filter(is_active=True, contest_only=True),
+        widget=forms.Select(attrs={'class': 'select select-bordered w-full'}),
+        help_text="Only contest-only problems (hidden from public list) are shown"
     )
     
     class Meta:

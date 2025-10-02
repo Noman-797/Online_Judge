@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.http import JsonResponse
@@ -10,8 +11,6 @@ from problems.models import Problem
 from .models import Submission
 from .forms import SubmissionForm
 from judge.evaluator import CodeEvaluator
-from judge.queue_manager import submission_queue
-import threading
 import json
 
 
@@ -43,44 +42,23 @@ def submit_solution(request, slug):
                 language=language
             )
             
-            # Check if problem is contest-only (uses queue system)
-            if problem.contest_only:
-                # Use queue for contest-only problems
-                submission_queue.add_submission(submission.id)
+            # Check if manual queue is enabled for contest problems
+            from django.conf import settings
+            if getattr(settings, 'ENABLE_MANUAL_QUEUE', False) and problem.contest_only:
+                # Queue contest submissions for manual processing
                 return JsonResponse({
                     'verdict': 'QUEUED',
-                    'message': 'Contest submission queued',
+                    'message': 'Contest submission queued for manual processing',
                     'submission_id': submission.id,
-                    'queue_position': submission_queue.get_queue_position(submission.id),
-                    'queue_size': submission_queue.get_queue_size(),
                     'execution_time': 0,
                     'memory_used': 0,
                     'test_cases_passed': 0,
                     'total_test_cases': 0
                 })
             else:
-                # Direct evaluation for regular submissions
-                from judge.multi_language_evaluator import MultiLanguageEvaluator
-                evaluator = MultiLanguageEvaluator()
-                test_cases = problem.test_cases.all()
-                
-                result = evaluator.evaluate_submission(
-                    code=code,
-                    language=language,
-                    test_cases=test_cases,
-                    time_limit=problem.time_limit,
-                    memory_limit=problem.memory_limit
-                )
-                
-                # Update submission with results
-                submission.verdict = result['verdict']
-                submission.execution_time = result.get('execution_time')
-                submission.memory_used = result.get('memory_used')
-                submission.compilation_error = result.get('compilation_error', '')
-                submission.runtime_error = result.get('runtime_error', '')
-                submission.test_cases_passed = result.get('test_cases_passed', 0)
-                submission.total_test_cases = result.get('total_test_cases', 0)
-                submission.save()
+                # Direct evaluation for regular problems
+                evaluator = CodeEvaluator(submission)
+                evaluator.evaluate()
                 
                 return JsonResponse({
                     'verdict': submission.verdict,
@@ -108,35 +86,15 @@ def submit_solution(request, slug):
             language=language
         )
         
-        # Check if problem is contest-only (uses queue system)
-        if problem.contest_only:
-            # Use queue for contest-only problems
-            submission_queue.add_submission(submission.id)
-            messages.success(request, 'Contest submission queued for evaluation!')
+        # Check if manual queue is enabled for contest problems
+        from django.conf import settings
+        if getattr(settings, 'ENABLE_MANUAL_QUEUE', False) and problem.contest_only:
+            # Queue contest submissions for manual processing
+            messages.success(request, 'Contest submission queued for manual processing!')
         else:
-            # Direct evaluation for regular submissions
-            from judge.multi_language_evaluator import MultiLanguageEvaluator
-            evaluator = MultiLanguageEvaluator()
-            test_cases = problem.test_cases.all()
-            
-            result = evaluator.evaluate_submission(
-                code=code,
-                language=language,
-                test_cases=test_cases,
-                time_limit=problem.time_limit,
-                memory_limit=problem.memory_limit
-            )
-            
-            # Update submission with results
-            submission.verdict = result['verdict']
-            submission.execution_time = result.get('execution_time')
-            submission.memory_used = result.get('memory_used')
-            submission.compilation_error = result.get('compilation_error', '')
-            submission.runtime_error = result.get('runtime_error', '')
-            submission.test_cases_passed = result.get('test_cases_passed', 0)
-            submission.total_test_cases = result.get('total_test_cases', 0)
-            submission.save()
-            
+            # Direct evaluation for regular problems
+            evaluator = CodeEvaluator(submission)
+            evaluator.evaluate()
             messages.success(request, 'Submission evaluated successfully!')
         
         # Redirect to submission detail page
@@ -293,15 +251,13 @@ def submit_ajax(request, slug):
             language=language
         )
         
-        # Check if problem is contest-only (uses queue system)
-        if problem.contest_only:
-            # Use queue for contest-only problems
-            submission_queue.add_submission(submission.id)
+        # Check if manual queue is enabled for contest problems
+        from django.conf import settings
+        if getattr(settings, 'ENABLE_MANUAL_QUEUE', False) and problem.contest_only:
+            # Queue contest submissions for manual processing
             return JsonResponse({
                 'verdict': 'QUEUED',
                 'submission_id': submission.id,
-                'queue_position': submission_queue.get_queue_position(submission.id),
-                'queue_size': submission_queue.get_queue_size(),
                 'execution_time': 0,
                 'memory_used': 0,
                 'test_cases_passed': 0,
@@ -309,28 +265,9 @@ def submit_ajax(request, slug):
                 'error_message': None
             })
         else:
-            # Direct evaluation for regular submissions
-            from judge.multi_language_evaluator import MultiLanguageEvaluator
-            evaluator = MultiLanguageEvaluator()
-            test_cases = problem.test_cases.all()
-            
-            result = evaluator.evaluate_submission(
-                code=code,
-                language=language,
-                test_cases=test_cases,
-                time_limit=problem.time_limit,
-                memory_limit=problem.memory_limit
-            )
-            
-            # Update submission with results
-            submission.verdict = result['verdict']
-            submission.execution_time = result.get('execution_time')
-            submission.memory_used = result.get('memory_used')
-            submission.compilation_error = result.get('compilation_error', '')
-            submission.runtime_error = result.get('runtime_error', '')
-            submission.test_cases_passed = result.get('test_cases_passed', 0)
-            submission.total_test_cases = result.get('total_test_cases', 0)
-            submission.save()
+            # Direct evaluation for regular problems
+            evaluator = CodeEvaluator(submission)
+            evaluator.evaluate()
             
             return JsonResponse({
                 'verdict': submission.verdict,
@@ -353,7 +290,7 @@ def check_submission_status(request, submission_id):
     """AJAX endpoint to check submission status"""
     submission = get_object_or_404(Submission, id=submission_id, user=request.user)
     
-    response_data = {
+    return JsonResponse({
         'verdict': submission.verdict,
         'verdict_display': submission.get_verdict_display(),
         'problem_title': submission.problem.title,
@@ -361,23 +298,6 @@ def check_submission_status(request, submission_id):
         'memory_used': submission.memory_used,
         'test_cases_passed': submission.test_cases_passed,
         'total_test_cases': submission.total_test_cases,
-    }
-    
-    # Add queue info if still queued
-    if submission.verdict == 'QUEUED':
-        response_data['queue_position'] = submission_queue.get_queue_position(submission.id)
-        response_data['queue_size'] = submission_queue.get_queue_size()
-    
-    return JsonResponse(response_data)
-
-
-@login_required
-def queue_status(request):
-    """AJAX endpoint to get current queue status"""
-    return JsonResponse({
-        'queue_size': submission_queue.get_queue_size(),
-        'active_workers': submission_queue.active_workers,
-        'max_workers': submission_queue.max_workers
     })
 
 
@@ -414,4 +334,96 @@ def recent_submissions(request):
     
     return JsonResponse({
         'submissions': submissions
+    })
+
+
+@staff_member_required
+def process_queue_manual(request):
+    """Manual queue processing for PythonAnywhere"""
+    if request.method == 'POST':
+        limit = int(request.POST.get('limit', 5))
+        queued_submissions = Submission.get_queued_submissions(limit=limit)
+        
+        results = []
+        processed = 0
+        failed = 0
+        
+        for submission in queued_submissions:
+            try:
+                from judge.evaluator import CodeEvaluator
+                evaluator = CodeEvaluator(submission)
+                evaluator.evaluate()
+                success = submission.verdict != 'RE'
+                
+                results.append({
+                    'id': submission.id,
+                    'user': submission.user.username,
+                    'problem': submission.problem.title,
+                    'verdict': submission.verdict,
+                    'success': success
+                })
+                
+                if success:
+                    processed += 1
+                else:
+                    failed += 1
+                    
+            except Exception as e:
+                failed += 1
+                results.append({
+                    'id': submission.id,
+                    'user': submission.user.username,
+                    'problem': submission.problem.title,
+                    'verdict': 'ERROR',
+                    'success': False,
+                    'error': str(e)
+                })
+        
+        return JsonResponse({
+            'processed': processed,
+            'failed': failed,
+            'results': results
+        })
+    
+    # GET request - show current queue status
+    queued_count = Submission.objects.filter(verdict='QUEUED').count()
+    recent_queued = Submission.objects.filter(verdict='QUEUED').order_by('submitted_at')[:10]
+    
+    return render(request, 'submissions/process_queue.html', {
+        'queued_count': queued_count,
+        'recent_queued': recent_queued,
+    })
+
+
+@staff_member_required
+def queue_status_api(request):
+    """API endpoint for queue status"""
+    return JsonResponse({
+        'queued': Submission.objects.filter(verdict='QUEUED').count(),
+        'judging': Submission.objects.filter(verdict='JUDGING').count(),
+        'recent_ac': Submission.objects.filter(verdict='AC').count(),
+    })
+
+
+@login_required
+def check_pending_submissions(request):
+    """AJAX endpoint to check for pending submissions and notify when completed"""
+    user_submissions = Submission.objects.filter(
+        user=request.user,
+        verdict__in=['QUEUED', 'JUDGING'],
+        is_test=False
+    ).values('id', 'verdict', 'problem__title', 'submitted_at')
+    
+    # Check for recently completed submissions (last 60 seconds)
+    recent_completed = Submission.objects.filter(
+        user=request.user,
+        judged_at__gte=timezone.now() - timezone.timedelta(seconds=60),
+        verdict__in=['AC', 'WA', 'CE', 'RE', 'TLE', 'MLE', 'PE'],
+        is_test=False
+    ).values('id', 'verdict', 'problem__title', 'judged_at')
+    
+    return JsonResponse({
+        'pending': list(user_submissions),
+        'completed': list(recent_completed),
+        'timestamp': timezone.now().isoformat()
     })

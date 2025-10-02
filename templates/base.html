@@ -65,6 +65,7 @@
                         <a href="{% url 'submissions:my_submissions' %}" class="text-gray-700 hover:text-indigo-600 font-medium text-sm xl:text-base">Submissions</a>
                         {% if user.is_staff %}
                             <a href="{% url 'problems:admin_problems' %}" class="text-gray-700 hover:text-indigo-600 font-medium text-sm xl:text-base">Manage</a>
+                            <a href="{% url 'submissions:process_queue_manual' %}" class="text-orange-600 hover:text-orange-700 font-medium text-sm xl:text-base">🔄 Queue</a>
                             <a href="{% url 'admin:index' %}" class="text-gray-700 hover:text-indigo-600 font-medium text-sm xl:text-base">Admin Panel</a>
                         {% endif %}
                         <a href="{% url 'accounts:profile' %}" class="text-gray-700 hover:text-indigo-600 font-medium text-sm xl:text-base">Profile</a>
@@ -94,6 +95,7 @@
                     <a href="{% url 'submissions:my_submissions' %}" class="block py-3 text-gray-700 hover:text-indigo-600 font-medium">Submissions</a>
                     {% if user.is_staff %}
                         <a href="{% url 'problems:admin_problems' %}" class="block py-3 text-gray-700 hover:text-indigo-600 font-medium">Manage</a>
+                        <a href="{% url 'submissions:process_queue_manual' %}" class="block py-3 text-orange-600 hover:text-orange-700 font-medium">🔄 Process Queue</a>
                         <a href="{% url 'admin:index' %}" class="block py-3 text-gray-700 hover:text-indigo-600 font-medium">Admin Panel</a>
                     {% endif %}
                     <a href="{% url 'accounts:profile' %}" class="block py-3 text-gray-700 hover:text-indigo-600 font-medium">Profile</a>
@@ -364,7 +366,51 @@
                     window.globalPendingSubmissions.add(submissionId);
                 });
             }
+            
+            // Start checking for pending submissions if user is logged in
+            {% if user.is_authenticated %}
+            // Initial check after 2 seconds
+            setTimeout(checkPendingSubmissions, 2000);
+            // Then check every 5 seconds
+            setInterval(checkPendingSubmissions, 5000);
+            {% endif %}
         });
+        
+        // Track notified submissions to avoid duplicates
+        window.notifiedSubmissionIds = new Set();
+        
+        // Check for pending submissions and show notifications
+        function checkPendingSubmissions() {
+            fetch('/submissions/check-pending/')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Checking submissions:', data); // Debug log
+                    
+                    // Show notifications for completed submissions
+                    data.completed.forEach(submission => {
+                        // Only notify if not already notified
+                        if (!window.notifiedSubmissionIds.has(submission.id)) {
+                            window.notifiedSubmissionIds.add(submission.id);
+                            
+                            const type = submission.verdict === 'AC' ? 'success' : 'error';
+                            window.showGlobalNotification(
+                                submission.problem__title,
+                                submission.verdict,
+                                type
+                            );
+                            
+                            console.log('Notification shown for:', submission.id, submission.verdict);
+                        }
+                    });
+                    
+                    // Clean up old notified IDs (keep last 100)
+                    if (window.notifiedSubmissionIds.size > 100) {
+                        const idsArray = Array.from(window.notifiedSubmissionIds);
+                        window.notifiedSubmissionIds = new Set(idsArray.slice(-50));
+                    }
+                })
+                .catch(error => console.error('Error checking pending submissions:', error));
+        }
         
         // Auto-dismiss Django messages
         document.addEventListener('DOMContentLoaded', function() {
@@ -375,6 +421,24 @@
                 }, 3000);
             });
         });
+        
+        // Add submission to pending list when queued
+        window.addPendingSubmission = function(submissionId) {
+            window.globalPendingSubmissions.add(submissionId);
+            const pendingSubmissions = Array.from(window.globalPendingSubmissions);
+            localStorage.setItem('pendingSubmissions', JSON.stringify(pendingSubmissions));
+        };
+        
+        // Remove submission from pending list when completed
+        window.removePendingSubmission = function(submissionId) {
+            window.globalPendingSubmissions.delete(submissionId);
+            const pendingSubmissions = Array.from(window.globalPendingSubmissions);
+            if (pendingSubmissions.length > 0) {
+                localStorage.setItem('pendingSubmissions', JSON.stringify(pendingSubmissions));
+            } else {
+                localStorage.removeItem('pendingSubmissions');
+            }
+        };
     </script>
 
     <!-- Footer -->
