@@ -51,3 +51,15 @@ class ContestProblemForm(forms.ModelForm):
             'order': forms.NumberInput(attrs={'class': 'input input-bordered w-full', 'value': 1}),
             'points': forms.NumberInput(attrs={'class': 'input input-bordered w-full', 'value': 100}),
         }
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        # Mark the problem as contest_only when added to a contest
+        if instance.problem:
+            instance.problem.contest_only = True
+            instance.problem.save()
+        
+        if commit:
+            instance.save()
+        return instance

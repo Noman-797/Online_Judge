@@ -91,7 +91,16 @@
                 {% for cp in contest_problems %}
                 <div class="flex justify-between items-center p-4 border-b last:border-b-0 hover:bg-gray-50">
                     <div class="flex-1 min-w-0">
-                        <h3 class="font-medium text-gray-900 mb-1">{{ forloop.counter }}. {{ cp.problem.title }}</h3>
+                        <div class="flex items-center gap-2 mb-1">
+                            <h3 class="font-medium text-gray-900">{{ forloop.counter }}. {{ cp.problem.title }}</h3>
+                            <div data-problem-id="{{ cp.problem.id }}">
+                                {% if cp.problem.id in solved_problem_ids %}
+                                    <span class="solved-badge inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="fas fa-check text-xs mr-1"></i>Solved
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
                         <div class="flex items-center gap-4 text-sm text-gray-600">
                             <span class="flex items-center gap-1">
                                 <i class="fas fa-tag text-xs"></i>
@@ -109,15 +118,15 @@
                     </div>
                     <div class="ml-4">
                         {% if contest.status == 'running' %}
-                            <a href="{% url 'problems:problem_detail' cp.problem.slug %}" class="btn btn-primary btn-sm">
+                            <a href="{% url 'contests:contest_problem_solve' contest.slug cp.problem.slug %}" class="btn btn-primary btn-sm">
                                 <i class="fas fa-code mr-1"></i>Solve
                             </a>
                         {% elif contest.status == 'ended' %}
-                            <a href="{% url 'problems:problem_detail' cp.problem.slug %}" class="btn btn-primary btn-sm">
+                            <a href="{% url 'contests:contest_problem_solve' contest.slug cp.problem.slug %}" class="btn btn-primary btn-sm">
                                 <i class="fas fa-code mr-1"></i>Solve
                             </a>
                         {% else %}
-                            <a href="{% url 'problems:problem_detail' cp.problem.slug %}" class="btn btn-outline btn-sm">
+                            <a href="{% url 'contests:contest_problem_solve' contest.slug cp.problem.slug %}" class="btn btn-outline btn-sm">
                                 <i class="fas fa-eye mr-1"></i>View
                             </a>
                         {% endif %}
@@ -134,6 +143,13 @@
                         <div class="flex-1 min-w-0">
                             <h3 class="font-medium text-gray-900 text-sm mb-2">{{ forloop.counter }}. {{ cp.problem.title }}</h3>
                             <div class="flex flex-wrap gap-2 text-xs">
+                                <div data-problem-id="{{ cp.problem.id }}">
+                                    {% if cp.problem.id in solved_problem_ids %}
+                                        <span class="solved-badge inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-800">
+                                            <i class="fas fa-check text-xs mr-1"></i>Solved
+                                        </span>
+                                    {% endif %}
+                                </div>
                                 <span class="inline-flex items-center px-2 py-1 rounded-full bg-blue-100 text-blue-800">
                                     <i class="fas fa-tag text-xs mr-1"></i>
                                     {{ cp.problem.category.name }}
@@ -150,15 +166,15 @@
                     </div>
                     <div class="flex gap-2">
                         {% if contest.status == 'running' %}
-                            <a href="{% url 'problems:problem_detail' cp.problem.slug %}" class="flex-1 btn btn-primary btn-sm text-center">
+                            <a href="{% url 'contests:contest_problem_solve' contest.slug cp.problem.slug %}" class="flex-1 btn btn-primary btn-sm text-center">
                                 <i class="fas fa-code mr-1"></i>Solve Now
                             </a>
                         {% elif contest.status == 'ended' %}
-                            <a href="{% url 'problems:problem_detail' cp.problem.slug %}" class="flex-1 btn btn-primary btn-sm text-center">
+                            <a href="{% url 'contests:contest_problem_solve' contest.slug cp.problem.slug %}" class="flex-1 btn btn-primary btn-sm text-center">
                                 <i class="fas fa-code mr-1"></i>Practice
                             </a>
                         {% else %}
-                            <a href="{% url 'problems:problem_detail' cp.problem.slug %}" class="flex-1 btn btn-outline btn-sm text-center">
+                            <a href="{% url 'contests:contest_problem_solve' contest.slug cp.problem.slug %}" class="flex-1 btn btn-outline btn-sm text-center">
                                 <i class="fas fa-eye mr-1"></i>View Problem
                             </a>
                         {% endif %}
@@ -231,4 +247,67 @@ updateProgress();
 setInterval(updateProgress, 1000);
 </script>
 {% endif %}
+
+<script>
+// Real-time solved status update
+let currentSolvedIds = new Set([{% for id in solved_problem_ids %}{{ id }}{% if not forloop.last %},{% endif %}{% endfor %}]);
+
+function updateSolvedStatus() {
+    fetch('{% url "contests:check_solved_status" contest.slug %}')
+        .then(response => response.json())
+        .then(data => {
+            const newSolvedIds = new Set(data.solved_problem_ids);
+            
+            // Only update if there are changes
+            if (JSON.stringify([...currentSolvedIds].sort()) !== JSON.stringify([...newSolvedIds].sort())) {
+                document.querySelectorAll('[data-problem-id]').forEach(element => {
+                    const problemId = parseInt(element.dataset.problemId);
+                    const solvedBadge = element.querySelector('.solved-badge');
+                    
+                    if (newSolvedIds.has(problemId)) {
+                        if (!solvedBadge) {
+                            const badge = document.createElement('span');
+                            badge.className = 'solved-badge inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800';
+                            badge.innerHTML = '<i class="fas fa-check text-xs mr-1"></i>Solved';
+                            element.appendChild(badge);
+                        }
+                    } else {
+                        if (solvedBadge) {
+                            solvedBadge.remove();
+                        }
+                    }
+                });
+                currentSolvedIds = newSolvedIds;
+            }
+        })
+        .catch(error => console.error('Error updating solved status:', error));
+}
+
+// Update solved status every 10 seconds
+setInterval(updateSolvedStatus, 10000);
+
+// Update immediately when page becomes visible
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        setTimeout(updateSolvedStatus, 1000);
+    }
+});
+
+// Update when user navigates back
+window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+        setTimeout(updateSolvedStatus, 1000);
+    }
+});
+
+// Only update solved status on AC - no other notifications
+window.addEventListener('storage', function(e) {
+    if (e.key === 'submissionResult' && e.newValue) {
+        const result = JSON.parse(e.newValue);
+        if (result.verdict === 'AC') {
+            updateSolvedStatus();
+        }
+    }
+});
+</script>
 {% endblock %}

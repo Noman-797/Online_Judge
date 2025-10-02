@@ -9,6 +9,9 @@ from submissions.models import Submission
 from .models import OTPVerification
 from django.core.mail import send_mail
 from django.conf import settings
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 
 class CustomLoginView(LoginView):
@@ -20,28 +23,45 @@ def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            email = form.cleaned_data['email']
-            otp = OTPVerification.generate_otp()
-            OTPVerification.objects.create(email=email, otp=otp)
-            
-            # Send OTP email
-            try:
-                send_mail(
-                    'OTP Verification - All About Semicolons',
-                    f'Your OTP code is: {otp}\n\nThis code will expire in 10 minutes.\n\nIf you did not request this, please ignore this email.',
-                    settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else 'noreply@semicolons.com',
-                    [email],
-                    fail_silently=False,
-                )
-                if settings.DEBUG:
-                    print(f'OTP for {email}: {otp}')  # Debug print only in development
-            except Exception as e:
-                messages.error(request, 'Failed to send OTP email. Please try again.')
-                return render(request, 'accounts/register.html', {'form': form})
-            
-            request.session['registration_data'] = form.cleaned_data
-            messages.success(request, 'OTP sent to your email. Please verify to complete registration.')
-            return redirect('accounts:verify_otp')
+            # Check if OTP verification is disabled
+            if getattr(settings, 'SKIP_EMAIL_VERIFICATION', False):
+                # Direct registration without OTP
+                try:
+                    user = form.save()
+                    from .models import UserProfile
+                    if not hasattr(user, 'userprofile'):
+                        UserProfile.objects.create(user=user)
+
+                    login(request, user)
+                    messages.success(request, f'Welcome {user.first_name}! Registration successful!')
+                    return redirect('home')
+                except Exception as e:
+                    messages.error(request, 'Registration failed. Please try again.')
+                    return render(request, 'accounts/register.html', {'form': form})
+            else:
+                # Original OTP flow
+                email = form.cleaned_data['email']
+                otp = OTPVerification.generate_otp()
+                OTPVerification.objects.create(email=email, otp=otp)
+
+                # Send OTP email
+                try:
+                    send_mail(
+                        'OTP Verification - All About Semicolons',
+                        f'Your OTP code is: {otp}\n\nThis code will expire in 10 minutes.\n\nIf you did not request this, please ignore this email.',
+                        settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else 'noreply@semicolons.com',
+                        [email],
+                        fail_silently=False,
+                    )
+                    if settings.DEBUG:
+                        print(f'OTP for {email}: {otp}')  # Debug print only in development
+                except Exception as e:
+                    messages.error(request, 'Failed to send OTP email. Please try again.')
+                    return render(request, 'accounts/register.html', {'form': form})
+
+                request.session['registration_data'] = form.cleaned_data
+                messages.success(request, 'OTP sent to your email. Please verify to complete registration.')
+                return redirect('accounts:verify_otp')
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
@@ -51,20 +71,21 @@ def register(request):
 
 @login_required
 def profile(request):
-    # Get solved problems
+    # Get solved problems (exclude test submissions)
     solved_problem_ids = Submission.objects.filter(
-        user=request.user, 
-        verdict='AC'
+        user=request.user,
+        verdict='AC',
+        is_test=False
     ).values_list('problem', flat=True).distinct()
-    
+
     from problems.models import Problem
-    solved_problems = Problem.objects.filter(id__in=solved_problem_ids)[:10]
+    solved_problems = Problem.objects.filter(id__in=solved_problem_ids).select_related('category').prefetch_related('contestproblem_set__contest')[:10]
     solved_problems_count = solved_problem_ids.count()
-    
-    # Calculate stats
-    total_submissions = Submission.objects.filter(user=request.user).count()
-    accepted_submissions = Submission.objects.filter(user=request.user, verdict='AC').count()
-    
+
+    # Calculate stats (exclude test submissions)
+    total_submissions = Submission.objects.filter(user=request.user, is_test=False).count()
+    accepted_submissions = Submission.objects.filter(user=request.user, verdict='AC', is_test=False).count()
+
     # Update user profile with proper error handling
     try:
         profile = request.user.userprofile
@@ -75,18 +96,18 @@ def profile(request):
         messages.error(request, 'Error accessing profile data.')
         from .models import UserProfile
         profile = UserProfile.objects.get_or_create(user=request.user)[0]
-    
+
     profile.solved_problems = solved_problems_count
     profile.total_submissions = total_submissions
     profile.save()
-    
+
     stats = {
         'total_submissions': total_submissions,
         'accepted_submissions': accepted_submissions,
         'solved_problems': solved_problems_count,
         'success_rate': profile.get_success_rate(),
     }
-    
+
     # Add admin statistics if user is staff
     admin_stats = {}
     if request.user.is_staff:
@@ -96,7 +117,7 @@ def profile(request):
             'total_problems': Problem.objects.count(),
             'total_categories': Category.objects.count(),
         }
-    
+
     context = {
         'solved_problems': solved_problems,
         'stats': stats,
@@ -108,7 +129,7 @@ def profile(request):
 @login_required
 def edit_profile(request):
     from .models import UserProfile
-    
+
     if request.method == 'POST':
         user_form = UserUpdateForm(request.POST, instance=request.user)
         try:
@@ -117,9 +138,9 @@ def edit_profile(request):
             user_profile = UserProfile.objects.create(user=request.user)
         except Exception:
             user_profile = UserProfile.objects.get_or_create(user=request.user)[0]
-        
+
         profile_form = UserProfileForm(request.POST, instance=user_profile)
-        
+
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
             profile_form.save()
@@ -133,9 +154,9 @@ def edit_profile(request):
             user_profile = UserProfile.objects.create(user=request.user)
         except Exception:
             user_profile = UserProfile.objects.get_or_create(user=request.user)[0]
-        
+
         profile_form = UserProfileForm(instance=user_profile)
-    
+
     return render(request, 'accounts/edit_profile.html', {
         'user_form': user_form,
         'profile_form': profile_form
@@ -146,17 +167,17 @@ def verify_otp(request):
     if request.method == 'POST':
         otp = request.POST.get('otp')
         registration_data = request.session.get('registration_data')
-        
+
         if not registration_data:
             messages.error(request, 'Registration session expired. Please register again.')
             return redirect('accounts:register')
-        
+
         otp_obj = OTPVerification.objects.filter(
-            email=registration_data['email'], 
-            otp=otp, 
+            email=registration_data['email'],
+            otp=otp,
             is_verified=False
         ).first()
-        
+
         if otp_obj and not otp_obj.is_expired():
             try:
                 form = CustomUserCreationForm(registration_data)
@@ -165,10 +186,10 @@ def verify_otp(request):
                     from .models import UserProfile
                     if not hasattr(user, 'userprofile'):
                         UserProfile.objects.create(user=user)
-                    
+
                     otp_obj.is_verified = True
                     otp_obj.save()
-                    
+
                     login(request, user)
                     del request.session['registration_data']
                     messages.success(request, f'Welcome {user.first_name}! Registration successful!')
@@ -177,7 +198,7 @@ def verify_otp(request):
                 messages.error(request, 'Registration failed. Please try again.')
         else:
             messages.error(request, 'Invalid or expired OTP. Please try again.')
-    
+
     return render(request, 'accounts/verify_otp.html')
 
 
@@ -191,26 +212,26 @@ def user_profile(request, username):
     from django.shortcuts import get_object_or_404
     from django.contrib.auth.models import User
     from .models import UserProfile
-    
+
     # Validate username to prevent path traversal
     if not username.isalnum() and '_' not in username and '-' not in username:
         messages.error(request, 'Invalid username format.')
         return redirect('home')
-    
+
     user = get_object_or_404(User, username=username)
     try:
         profile = user.userprofile
     except UserProfile.DoesNotExist:
         profile = UserProfile.objects.create(user=user)
-    
-    # Get user's submission stats
-    total_submissions = Submission.objects.filter(user=user).count()
-    accepted_submissions = Submission.objects.filter(user=user, verdict='AC').count()
-    
+
+    # Get user's submission stats (exclude test submissions)
+    total_submissions = Submission.objects.filter(user=user, is_test=False).count()
+    accepted_submissions = Submission.objects.filter(user=user, verdict='AC', is_test=False).count()
+
     success_rate = 0
     if total_submissions > 0:
         success_rate = round((accepted_submissions / total_submissions) * 100, 1)
-    
+
     context = {
         'profile_user': user,
         'profile': profile,
@@ -218,5 +239,26 @@ def user_profile(request, username):
         'accepted_submissions': accepted_submissions,
         'success_rate': success_rate,
     }
-    
+
     return render(request, 'accounts/user_profile.html', context)
+
+
+@login_required
+@csrf_exempt
+def update_language_preference(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            language = data.get('language')
+            
+            if language in ['c', 'cpp', 'python']:
+                profile = request.user.userprofile
+                profile.preferred_language = language
+                profile.save()
+                return JsonResponse({'success': True})
+            else:
+                return JsonResponse({'success': False, 'error': 'Invalid language'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})

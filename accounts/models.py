@@ -8,10 +8,17 @@ from datetime import timedelta
 
 
 class UserProfile(models.Model):
+    LANGUAGE_CHOICES = [
+        ('c', 'C'),
+        ('cpp', 'C++'),
+        ('python', 'Python'),
+    ]
+    
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     solved_problems = models.IntegerField(default=0)
     total_submissions = models.IntegerField(default=0)
     bio = models.TextField(max_length=500, blank=True)
+    preferred_language = models.CharField(max_length=10, choices=LANGUAGE_CHOICES, default='c')
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:

@@ -40,6 +40,17 @@ def problem_list(request):
     page = request.GET.get('page')
     problems = paginator.get_page(page)
     
+    # Get solved problems for the user (exclude test submissions)
+    solved_problem_ids = set()
+    if request.user.is_authenticated:
+        solved_problem_ids = set(
+            Submission.objects.filter(
+                user=request.user,
+                verdict='AC',
+                is_test=False
+            ).values_list('problem_id', flat=True)
+        )
+    
     context = {
         'problems': problems,
         'categories': categories,
@@ -48,6 +59,7 @@ def problem_list(request):
         'search_query': search,
         'is_paginated': problems.has_other_pages,
         'page_obj': problems,
+        'solved_problem_ids': solved_problem_ids,
     }
     return render(request, 'problems/problem_list.html', context)
 
@@ -62,7 +74,7 @@ def problem_solve(request, slug):
         messages.error(request, 'Invalid problem identifier.')
         return redirect('problems:problem_list')
     
-    problem = get_object_or_404(Problem, slug=slug, is_active=True)
+    problem = get_object_or_404(Problem, slug=slug, is_active=True, contest_only=False)
     return render(request, 'problems/problem_solve.html', {'problem': problem})
 
 
@@ -141,7 +153,7 @@ def edit_problem(request, slug):
 @user_passes_test(is_staff)
 def manage_test_cases(request, slug):
     problem = get_object_or_404(Problem, slug=slug)
-    test_cases = TestCase.objects.filter(problem=problem)
+    test_cases = TestCase.objects.filter(problem=problem).order_by('id')
     
     if request.method == 'POST':
         form = TestCaseForm(request.POST)
@@ -230,3 +242,42 @@ def delete_category(request, id):
         return redirect('problems:manage_categories')
     
     return render(request, 'problems/delete_category.html', {'category': category})
+
+
+@login_required
+@user_passes_test(is_staff)
+def edit_test_case(request, test_case_id):
+    test_case = get_object_or_404(TestCase, id=test_case_id)
+    problem = test_case.problem
+    
+    if request.method == 'POST':
+        form = TestCaseForm(request.POST, instance=test_case)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Test case updated successfully!')
+            return redirect('problems:manage_test_cases', slug=problem.slug)
+    else:
+        form = TestCaseForm(instance=test_case)
+    
+    return render(request, 'problems/edit_test_case.html', {
+        'form': form,
+        'test_case': test_case,
+        'problem': problem
+    })
+
+
+@login_required
+@user_passes_test(is_staff)
+def delete_test_case(request, test_case_id):
+    test_case = get_object_or_404(TestCase, id=test_case_id)
+    problem = test_case.problem
+    
+    if request.method == 'POST':
+        test_case.delete()
+        messages.success(request, 'Test case deleted successfully!')
+        return redirect('problems:manage_test_cases', slug=problem.slug)
+    
+    return render(request, 'problems/delete_test_case.html', {
+        'test_case': test_case,
+        'problem': problem
+    })

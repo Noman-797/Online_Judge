@@ -20,4 +20,8 @@ urlpatterns = [
     path('admin/<slug:slug>/ban/<int:user_id>/', views.ban_participant, name='ban_participant'),
     path('admin/<slug:slug>/unban/<int:user_id>/', views.unban_participant, name='unban_participant'),
     path('admin/<slug:slug>/user/<int:user_id>/submissions/', views.user_submissions, name='user_submissions'),
+    path('<slug:slug>/problem/<slug:problem_slug>/', views.contest_problem_solve, name='contest_problem_solve'),
+    path('<slug:slug>/problem/<slug:problem_slug>/test/', views.contest_test_code, name='contest_test_code'),
+    path('<slug:slug>/problem/<slug:problem_slug>/submit/', views.contest_submit_ajax, name='contest_submit_ajax'),
+    path('<slug:slug>/check-solved/', views.check_solved_status, name='check_solved_status'),
 ]

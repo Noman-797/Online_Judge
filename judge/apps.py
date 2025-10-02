@@ -5,14 +5,13 @@ class JudgeConfig(AppConfig):
     name = 'judge'
     
     def ready(self):
-        # Skip queue startup during migrations
+        # Start queue system for contest submissions
         import sys
         if any(cmd in sys.argv for cmd in ['migrate', 'makemigrations', 'collectstatic']):
             return
             
         try:
             from django.db import connection
-            # Test database connection
             connection.ensure_connection()
             
             from .queue_manager import submission_queue

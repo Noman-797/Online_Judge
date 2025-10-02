@@ -1,167 +1,213 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Semicolons</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Logo CSS -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/logo.css' %}">
 
-{% block title %}Register - Semicolons{% endblock %}
+    <script>
+        tailwind.config = {
+            darkMode: false,
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            },
+            daisyui: { themes: ["light"] }
+        }
+    </script>
+    <style>
+        html, body { background: white !important; color: black !important; }
+        @media (prefers-color-scheme: dark) {
+            html, body { background: white !important; color: black !important; }
+        }
+    </style>
+</head>
+<body data-theme="light" style="background: #f9fafb !important; color: black !important;">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50" style="background: white !important;">
+        <div class="px-4">
+            <div class="flex justify-between items-center h-16" style="max-width: none; margin: 0;">
+                <!-- Logo -->
+                <div class="flex-shrink-0">
+                    <a href="/" class="flex items-center space-x-2">
+                        <div class="logo-icon-alt h-8 w-8"></div>
+                        <span class="text-xl font-semibold" style="color: black !important;">Semicolons</span>
+                    </a>
+                </div>
 
-{% block content %}
-<div class="max-w-md mx-auto px-4 py-8">
-    <div class="card bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 p-8">
-        <div class="text-center mb-6">
-            <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Create Account</h1>
-            <p class="text-gray-600 dark:text-gray-400">Join the Semicolons community</p>
+                <!-- Desktop Navigation -->
+                <div class="hidden lg:flex items-center space-x-4 xl:space-x-6">
+                    <a href="/accounts/login/" class="font-medium text-sm xl:text-base" style="color: #374151 !important;">Login</a>
+                    <a href="/accounts/register/" class="px-3 xl:px-4 py-2 rounded-lg font-medium text-sm xl:text-base" style="background: #4f46e5 !important; color: white !important;">Register</a>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="lg:hidden">
+                    <button class="p-2" onclick="toggleMobileMenu()" style="color: #374151 !important;">
+                        <i class="fas fa-bars text-lg sm:text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Navigation -->
+            <div id="mobile-menu" class="hidden lg:hidden pb-4">
+                <a href="/accounts/login/" class="block py-3 font-medium" style="color: #374151 !important;">Login</a>
+                <a href="/accounts/register/" class="block py-3 font-medium" style="color: #4f46e5 !important;">Register</a>
+            </div>
         </div>
-        
-        <form method="post" class="space-y-4">
-            {% csrf_token %}
-            
-            <div>
-                <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                    Username
-                </label>
-                <input type="text" name="username" id="{{ form.username.id_for_label }}" 
-                       value="{{ form.username.value|default:'' }}"
-                       class="input input-bordered w-full bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 placeholder-gray-600 dark:placeholder-gray-400"
-                       placeholder="Choose a username" required>
-                {% if form.username.errors %}
-                    <div class="text-sm text-red-600 mt-1">
-                        {{ form.username.errors.0 }}
+    </nav>
+    
+    <div class="min-h-screen flex items-center justify-center px-3 sm:px-4 py-8 sm:py-12">
+        <div class="w-full max-w-sm sm:max-w-md">
+            <div class="bg-white rounded-lg sm:rounded-xl shadow-2xl border border-gray-100 p-4 sm:p-6" style="background: white !important; color: black !important;">
+                <div class="text-center mb-6 sm:mb-8">
+                    <h1 class="text-2xl sm:text-3xl font-bold" style="color: black !important;">Create Account</h1>
+                    <p class="text-gray-500 mt-1 sm:mt-2 text-sm sm:text-base">Join the Semicolons community</p>
+                </div>
+                
+                <form method="post" class="space-y-3 sm:space-y-4">
+                    {% csrf_token %}
+                    
+                    <div>
+                        <input type="text" name="username" id="{{ form.username.id_for_label }}" 
+                               value="{{ form.username.value|default:'' }}"
+                               class="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                               style="background: white !important; color: black !important;"
+                               placeholder="Username" required>
+                        {% if form.username.errors %}
+                            <p class="text-red-500 text-xs sm:text-sm mt-1">{{ form.username.errors.0 }}</p>
+                        {% endif %}
                     </div>
-                {% endif %}
-            </div>
-            
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                        First Name
-                    </label>
-                    <input type="text" name="first_name" id="{{ form.first_name.id_for_label }}" 
-                           value="{{ form.first_name.value|default:'' }}"
-                           class="input input-bordered w-full bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 placeholder-gray-600 dark:placeholder-gray-400"
-                           placeholder="First Name" required>
-                    {% if form.first_name.errors %}
-                        <div class="text-sm text-red-600 mt-1">
-                            {{ form.first_name.errors.0 }}
+                    
+                    <div class="grid grid-cols-2 gap-2 sm:gap-3">
+                        <div>
+                            <input type="text" name="first_name" id="{{ form.first_name.id_for_label }}" 
+                                   value="{{ form.first_name.value|default:'' }}"
+                                   class="w-full px-2 sm:px-3 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                   style="background: white !important; color: black !important;"
+                                   placeholder="First Name" required>
+                            {% if form.first_name.errors %}
+                                <p class="text-red-500 text-xs mt-1">{{ form.first_name.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <input type="text" name="last_name" id="{{ form.last_name.id_for_label }}" 
+                                   value="{{ form.last_name.value|default:'' }}"
+                                   class="w-full px-2 sm:px-3 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                   style="background: white !important; color: black !important;"
+                                   placeholder="Last Name" required>
+                            {% if form.last_name.errors %}
+                                <p class="text-red-500 text-xs mt-1">{{ form.last_name.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <input type="email" name="email" id="{{ form.email.id_for_label }}" 
+                               value="{{ form.email.value|default:'' }}"
+                               class="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                               style="background: white !important; color: black !important;"
+                               placeholder="Enter your email" required>
+                        {% if form.email.errors %}
+                            <p class="text-red-500 text-xs sm:text-sm mt-1">{{ form.email.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="relative">
+                        <input type="password" name="password1" id="{{ form.password1.id_for_label }}"
+                               class="w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                               style="background: white !important; color: black !important;"
+                               placeholder="Password" required>
+                        <button type="button" class="absolute inset-y-0 right-0 pr-2 sm:pr-3 flex items-center" onclick="togglePassword('{{ form.password1.id_for_label }}')"
+                                id="toggle-{{ form.password1.id_for_label }}">
+                            <i class="fas fa-eye text-gray-400 hover:text-gray-600 text-sm sm:text-base"></i>
+                        </button>
+                        {% if form.password1.errors %}
+                            <p class="text-red-500 text-xs sm:text-sm mt-1">{{ form.password1.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="relative">
+                        <input type="password" name="password2" id="{{ form.password2.id_for_label }}"
+                               class="w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                               style="background: white !important; color: black !important;"
+                               placeholder="Confirm Password" required>
+                        <button type="button" class="absolute inset-y-0 right-0 pr-2 sm:pr-3 flex items-center" onclick="togglePassword('{{ form.password2.id_for_label }}')"
+                                id="toggle-{{ form.password2.id_for_label }}">
+                            <i class="fas fa-eye text-gray-400 hover:text-gray-600 text-sm sm:text-base"></i>
+                        </button>
+                        {% if form.password2.errors %}
+                            <p class="text-red-500 text-xs sm:text-sm mt-1">{{ form.password2.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    {% if form.non_field_errors %}
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-2 sm:p-3">
+                            <p class="text-red-600 text-xs sm:text-sm">{{ form.non_field_errors.0 }}</p>
                         </div>
                     {% endif %}
-                </div>
-                <div>
-                    <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                        Last Name
-                    </label>
-                    <input type="text" name="last_name" id="{{ form.last_name.id_for_label }}" 
-                           value="{{ form.last_name.value|default:'' }}"
-                           class="input input-bordered w-full bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 placeholder-gray-600 dark:placeholder-gray-400"
-                           placeholder="Last Name" required>
-                    {% if form.last_name.errors %}
-                        <div class="text-sm text-red-600 mt-1">
-                            {{ form.last_name.errors.0 }}
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <div>
-                <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                    Email Address
-                </label>
-                <input type="email" name="email" id="{{ form.email.id_for_label }}" 
-                       value="{{ form.email.value|default:'' }}"
-                       class="input input-bordered w-full bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 placeholder-gray-600 dark:placeholder-gray-400"
-                       placeholder="Enter your email" required>
-                {% if form.email.errors %}
-                    <div class="text-sm text-red-600 mt-1">
-                        {{ form.email.errors.0 }}
-                    </div>
-                {% endif %}
-            </div>
-            
-            <div>
-                <label for="{{ form.password1.id_for_label }}" class="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                    Password
-                </label>
-                <div class="relative">
-                    <input type="password" name="password1" id="{{ form.password1.id_for_label }}"
-                           class="input input-bordered w-full pr-10 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 placeholder-gray-600 dark:placeholder-gray-400"
-                           placeholder="Create a password" required>
-                    <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center" onclick="togglePassword('{{ form.password1.id_for_label }}')"
-                            id="toggle-{{ form.password1.id_for_label }}">
-                        <i class="fas fa-eye text-gray-400 hover:text-gray-600"></i>
+                    
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-2.5 sm:py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors mt-4 sm:mt-6 text-sm sm:text-base">
+                        Create Account
                     </button>
+                </form>
+                
+                <div class="mt-4 sm:mt-6 text-center">
+                    <p class="text-gray-500 text-xs sm:text-sm">Already have an account? 
+                        <a href="{% url 'accounts:login' %}" class="text-indigo-600 hover:text-indigo-700 font-medium">Sign in</a>
+                    </p>
                 </div>
-                <div class="text-xs text-gray-500 mt-1">
-                    Must be 8+ characters with letters and numbers/symbols
-                </div>
-                {% if form.password1.errors %}
-                    <div class="text-sm text-red-600 mt-1">
-                        {{ form.password1.errors.0 }}
-                    </div>
-                {% endif %}
             </div>
-            
-            <div>
-                <label for="{{ form.password2.id_for_label }}" class="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                    Confirm Password
-                </label>
-                <div class="relative">
-                    <input type="password" name="password2" id="{{ form.password2.id_for_label }}"
-                           class="input input-bordered w-full pr-10 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 placeholder-gray-600 dark:placeholder-gray-400"
-                           placeholder="Confirm your password" required>
-                    <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center" onclick="togglePassword('{{ form.password2.id_for_label }}')"
-                            id="toggle-{{ form.password2.id_for_label }}">
-                        <i class="fas fa-eye text-gray-400 hover:text-gray-600"></i>
-                    </button>
-                </div>
-                {% if form.password2.errors %}
-                    <div class="text-sm text-red-600 mt-1">
-                        {{ form.password2.errors.0 }}
-                    </div>
-                {% endif %}
-            </div>
-            
-            {% if form.non_field_errors %}
-                <div class="alert alert-error bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-100 border border-red-200 dark:border-red-600 rounded-lg p-3">
-                    <i class="fas fa-exclamation-circle mr-2"></i>
-                    {{ form.non_field_errors.0 }}
-                </div>
-            {% endif %}
-            
-            <button type="submit" class="btn w-full bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600">
-                <i class="fas fa-user-plus mr-2"></i>
-                Create Account
-            </button>
-        </form>
-        
-        <div class="divider text-gray-600 dark:text-gray-400">OR</div>
-        
-        <div class="text-center">
-            <p class="text-gray-600 dark:text-gray-400 mb-4">
-                Already have an account?
-            </p>
-            <a href="{% url 'accounts:login' %}" 
-               class="btn w-full bg-gray-200 text-gray-900 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
-                <i class="fas fa-sign-in-alt mr-2"></i>
-                Sign In
-            </a>
         </div>
     </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-function togglePassword(fieldId) {
-    const passwordField = document.getElementById(fieldId);
-    const toggleButton = document.getElementById('toggle-' + fieldId);
-    const icon = toggleButton.querySelector('i');
     
-    if (passwordField.type === 'password') {
-        passwordField.type = 'text';
-        icon.classList.remove('fa-eye');
-        icon.classList.add('fa-eye-slash');
-    } else {
-        passwordField.type = 'password';
-        icon.classList.remove('fa-eye-slash');
-        icon.classList.add('fa-eye');
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-white py-8 sm:py-12 mt-8 sm:mt-16" style="background: #0f172a !important; color: white !important;">
+        <div class="max-w-6xl mx-auto px-3 sm:px-4 text-center">
+            <div class="mb-4 sm:mb-6">
+                <h3 class="text-xl sm:text-2xl font-bold mb-2 sm:mb-3">All About Semicolons</h3>
+                <p class="text-slate-300 text-sm sm:text-lg">Master C & C++ programming through practice and competition</p>
+            </div>
+            <div class="border-t border-slate-700 pt-4 sm:pt-6">
+                <p class="text-slate-400 text-xs sm:text-sm">&copy; 2025 All About Semicolons. All rights reserved.</p>
+                <p class="text-slate-500 text-xs sm:text-sm mt-1 sm:mt-2">Made with ❤️ by Abdullah Al Noman</p>
+            </div>
+        </div>
+    </footer>
+    
+    <script>
+    function toggleMobileMenu() {
+        const menu = document.getElementById('mobile-menu');
+        menu.classList.toggle('hidden');
     }
-}
-</script>
-{% endblock %}
+    
+    function togglePassword(fieldId) {
+        const passwordField = document.getElementById(fieldId);
+        const toggleButton = document.getElementById('toggle-' + fieldId);
+        const icon = toggleButton.querySelector('i');
+        
+        if (passwordField.type === 'password') {
+            passwordField.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            passwordField.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+    </script>
+</body>
+</html>

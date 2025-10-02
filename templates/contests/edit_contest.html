@@ -21,11 +21,6 @@
             </div>
 
             <div class="mb-4">
-                <label class="block text-sm font-medium mb-1">Slug</label>
-                {{ form.slug }}
-            </div>
-
-            <div class="mb-4">
                 <label class="block text-sm font-medium mb-1">Description</label>
                 <div id="description-editor" style="height: 200px;"></div>
                 <textarea name="description" id="description-textarea" style="display: none;">{{ form.description.value|default:'' }}</textarea>

@@ -5,6 +5,7 @@ from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from django.utils import timezone
 from problems.models import Problem
 from .models import Submission
 from .forms import SubmissionForm
@@ -16,7 +17,7 @@ import json
 
 @login_required
 def submit_solution(request, slug):
-    problem = get_object_or_404(Problem, slug=slug, is_active=True)
+    problem = get_object_or_404(Problem, slug=slug, is_active=True, contest_only=False)
     
     if request.method == 'POST':
         # Handle AJAX submission
@@ -34,7 +35,7 @@ def submit_solution(request, slug):
                     'total_test_cases': 0
                 })
             
-            # Create submission
+            # Create submission first
             submission = Submission.objects.create(
                 user=request.user,
                 problem=problem,
@@ -42,21 +43,54 @@ def submit_solution(request, slug):
                 language=language
             )
             
-            # Add to queue for async processing
-            submission_queue.add_submission(submission.id)
-            
-            # Return JSON response with queue info
-            return JsonResponse({
-                'verdict': 'QUEUED',
-                'message': 'Submission queued for evaluation',
-                'submission_id': submission.id,
-                'queue_position': submission_queue.get_queue_position(submission.id),
-                'queue_size': submission_queue.get_queue_size(),
-                'execution_time': 0,
-                'memory_used': 0,
-                'test_cases_passed': 0,
-                'total_test_cases': 0
-            })
+            # Check if problem is contest-only (uses queue system)
+            if problem.contest_only:
+                # Use queue for contest-only problems
+                submission_queue.add_submission(submission.id)
+                return JsonResponse({
+                    'verdict': 'QUEUED',
+                    'message': 'Contest submission queued',
+                    'submission_id': submission.id,
+                    'queue_position': submission_queue.get_queue_position(submission.id),
+                    'queue_size': submission_queue.get_queue_size(),
+                    'execution_time': 0,
+                    'memory_used': 0,
+                    'test_cases_passed': 0,
+                    'total_test_cases': 0
+                })
+            else:
+                # Direct evaluation for regular submissions
+                from judge.multi_language_evaluator import MultiLanguageEvaluator
+                evaluator = MultiLanguageEvaluator()
+                test_cases = problem.test_cases.all()
+                
+                result = evaluator.evaluate_submission(
+                    code=code,
+                    language=language,
+                    test_cases=test_cases,
+                    time_limit=problem.time_limit,
+                    memory_limit=problem.memory_limit
+                )
+                
+                # Update submission with results
+                submission.verdict = result['verdict']
+                submission.execution_time = result.get('execution_time')
+                submission.memory_used = result.get('memory_used')
+                submission.compilation_error = result.get('compilation_error', '')
+                submission.runtime_error = result.get('runtime_error', '')
+                submission.test_cases_passed = result.get('test_cases_passed', 0)
+                submission.total_test_cases = result.get('total_test_cases', 0)
+                submission.save()
+                
+                return JsonResponse({
+                    'verdict': submission.verdict,
+                    'message': 'Submission evaluated',
+                    'submission_id': submission.id,
+                    'execution_time': float(submission.execution_time) if submission.execution_time else 0,
+                    'memory_used': submission.memory_used or 0,
+                    'test_cases_passed': submission.test_cases_passed or 0,
+                    'total_test_cases': submission.total_test_cases or 0
+                })
         
         # Handle regular form submission
         code = request.POST.get('code', '').strip()
@@ -66,7 +100,7 @@ def submit_solution(request, slug):
             messages.error(request, 'Please provide your code before submitting.')
             return render(request, 'submissions/submit.html', {'problem': problem})
         
-        # Create submission
+        # Create submission first
         submission = Submission.objects.create(
             user=request.user,
             problem=problem,
@@ -74,9 +108,36 @@ def submit_solution(request, slug):
             language=language
         )
         
-        # Add to queue for async processing
-        submission_queue.add_submission(submission.id)
-        messages.success(request, 'Submission queued for evaluation!')
+        # Check if problem is contest-only (uses queue system)
+        if problem.contest_only:
+            # Use queue for contest-only problems
+            submission_queue.add_submission(submission.id)
+            messages.success(request, 'Contest submission queued for evaluation!')
+        else:
+            # Direct evaluation for regular submissions
+            from judge.multi_language_evaluator import MultiLanguageEvaluator
+            evaluator = MultiLanguageEvaluator()
+            test_cases = problem.test_cases.all()
+            
+            result = evaluator.evaluate_submission(
+                code=code,
+                language=language,
+                test_cases=test_cases,
+                time_limit=problem.time_limit,
+                memory_limit=problem.memory_limit
+            )
+            
+            # Update submission with results
+            submission.verdict = result['verdict']
+            submission.execution_time = result.get('execution_time')
+            submission.memory_used = result.get('memory_used')
+            submission.compilation_error = result.get('compilation_error', '')
+            submission.runtime_error = result.get('runtime_error', '')
+            submission.test_cases_passed = result.get('test_cases_passed', 0)
+            submission.total_test_cases = result.get('total_test_cases', 0)
+            submission.save()
+            
+            messages.success(request, 'Submission evaluated successfully!')
         
         # Redirect to submission detail page
         return redirect('submissions:submission_detail', submission_id=submission.id)
@@ -153,7 +214,7 @@ def test_code(request, slug):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
-    problem = get_object_or_404(Problem, slug=slug, is_active=True)
+    problem = get_object_or_404(Problem, slug=slug, is_active=True, contest_only=False)
     
     try:
         data = json.loads(request.body)
@@ -179,9 +240,9 @@ def test_code(request, slug):
             is_test=True
         )
         
-        # Evaluate against all test cases (same as submit)
+        # Evaluate against sample test cases only
         evaluator = CodeEvaluator(temp_submission)
-        evaluator.evaluate(sample_only=False)
+        evaluator.evaluate(sample_only=True)
         
         return JsonResponse({
             'verdict': temp_submission.verdict,
@@ -211,7 +272,7 @@ def submit_ajax(request, slug):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
-    problem = get_object_or_404(Problem, slug=slug, is_active=True)
+    problem = get_object_or_404(Problem, slug=slug, is_active=True, contest_only=False)
     
     try:
         data = json.loads(request.body)
@@ -224,7 +285,7 @@ def submit_ajax(request, slug):
                 'error_message': 'No code provided'
             })
         
-        # Create submission
+        # Create submission first
         submission = Submission.objects.create(
             user=request.user,
             problem=problem,
@@ -232,20 +293,54 @@ def submit_ajax(request, slug):
             language=language
         )
         
-        # Evaluate all test cases
-        evaluator = CodeEvaluator(submission)
-        evaluator.evaluate()
-        
-        submission.refresh_from_db()
-        
-        return JsonResponse({
-            'verdict': submission.verdict,
-            'execution_time': float(submission.execution_time) if submission.execution_time else 0,
-            'memory_used': submission.memory_used or 0,
-            'test_cases_passed': submission.test_cases_passed or 0,
-            'total_test_cases': submission.total_test_cases or 0,
-            'error_message': submission.compilation_error or submission.runtime_error or None
-        })
+        # Check if problem is contest-only (uses queue system)
+        if problem.contest_only:
+            # Use queue for contest-only problems
+            submission_queue.add_submission(submission.id)
+            return JsonResponse({
+                'verdict': 'QUEUED',
+                'submission_id': submission.id,
+                'queue_position': submission_queue.get_queue_position(submission.id),
+                'queue_size': submission_queue.get_queue_size(),
+                'execution_time': 0,
+                'memory_used': 0,
+                'test_cases_passed': 0,
+                'total_test_cases': 0,
+                'error_message': None
+            })
+        else:
+            # Direct evaluation for regular submissions
+            from judge.multi_language_evaluator import MultiLanguageEvaluator
+            evaluator = MultiLanguageEvaluator()
+            test_cases = problem.test_cases.all()
+            
+            result = evaluator.evaluate_submission(
+                code=code,
+                language=language,
+                test_cases=test_cases,
+                time_limit=problem.time_limit,
+                memory_limit=problem.memory_limit
+            )
+            
+            # Update submission with results
+            submission.verdict = result['verdict']
+            submission.execution_time = result.get('execution_time')
+            submission.memory_used = result.get('memory_used')
+            submission.compilation_error = result.get('compilation_error', '')
+            submission.runtime_error = result.get('runtime_error', '')
+            submission.test_cases_passed = result.get('test_cases_passed', 0)
+            submission.total_test_cases = result.get('total_test_cases', 0)
+            submission.save()
+            
+            return JsonResponse({
+                'verdict': submission.verdict,
+                'submission_id': submission.id,
+                'execution_time': float(submission.execution_time) if submission.execution_time else 0,
+                'memory_used': submission.memory_used or 0,
+                'test_cases_passed': submission.test_cases_passed or 0,
+                'total_test_cases': submission.total_test_cases or 0,
+                'error_message': submission.compilation_error or submission.runtime_error or None
+            })
         
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
@@ -261,6 +356,7 @@ def check_submission_status(request, submission_id):
     response_data = {
         'verdict': submission.verdict,
         'verdict_display': submission.get_verdict_display(),
+        'problem_title': submission.problem.title,
         'execution_time': submission.execution_time,
         'memory_used': submission.memory_used,
         'test_cases_passed': submission.test_cases_passed,
@@ -282,4 +378,40 @@ def queue_status(request):
         'queue_size': submission_queue.get_queue_size(),
         'active_workers': submission_queue.active_workers,
         'max_workers': submission_queue.max_workers
+    })
+
+
+@login_required
+def recent_submissions(request):
+    """AJAX endpoint to get user's recent submissions"""
+    since_timestamp = request.GET.get('since', 0)
+    contest_slug = request.GET.get('contest')
+    
+    try:
+        since_time = timezone.datetime.fromtimestamp(int(since_timestamp) / 1000, tz=timezone.utc)
+    except (ValueError, TypeError):
+        since_time = timezone.now() - timezone.timedelta(minutes=5)
+    
+    submissions_query = Submission.objects.filter(
+        user=request.user,
+        submitted_at__gte=since_time,
+        is_test=False
+    ).order_by('-submitted_at')
+    
+    # Filter by contest if provided
+    if contest_slug:
+        from contests.models import Contest, ContestProblem
+        try:
+            contest = Contest.objects.get(slug=contest_slug, is_active=True)
+            contest_problem_ids = ContestProblem.objects.filter(contest=contest).values_list('problem_id', flat=True)
+            submissions_query = submissions_query.filter(problem_id__in=contest_problem_ids)
+        except Contest.DoesNotExist:
+            pass
+    
+    submissions = list(submissions_query.values(
+        'id', 'verdict', 'submitted_at', 'problem__title'
+    ))
+    
+    return JsonResponse({
+        'submissions': submissions
     })

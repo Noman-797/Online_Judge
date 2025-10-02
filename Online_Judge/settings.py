@@ -23,7 +23,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-2lk4o%wk*(2#$plf(#2iu
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['aasoj.pythonanywhere.com']
+ALLOWED_HOSTS = ['*']
 
 
 
@@ -41,8 +41,7 @@ INSTALLED_APPS = [
     'problems',
     'submissions',
     'judge',
-
-
+    'contests',
 ]
 
 MIDDLEWARE = [
@@ -85,9 +84,9 @@ if any(host in os.environ.get('HTTP_HOST', '') for host in ['.pythonanywhere.com
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'aasoj$onlinejudge',
-            'USER': 'aasoj',
-            'PASSWORD': 'Noman@797@AAS',
+            'NAME': 'semicolons$default',
+            'USER': 'semicolons',
+            'PASSWORD': 'Noman@797',
             'HOST': 'aasoj.mysql.pythonanywhere-services.com',
             'OPTIONS': {
                 'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
@@ -95,7 +94,7 @@ if any(host in os.environ.get('HTTP_HOST', '') for host in ['.pythonanywhere.com
         }
     }
     ALLOWED_HOSTS = ['*']
-    DEBUG = False
+    DEBUG = True
     SECURE_SSL_REDIRECT = False
     SECURE_HSTS_SECONDS = 0
 else:
@@ -169,6 +168,18 @@ if not DEBUG and 'PYTHONANYWHERE_DOMAIN' not in os.environ:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.pythonanywhere.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'semicolons@pythonanywhere.com'  # tomer PythonAnywhere email
+EMAIL_HOST_PASSWORD = 'Noman@797@DIU'             # tomer password
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# Disable OTP verification for production
+SKIP_EMAIL_VERIFICATION = True
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

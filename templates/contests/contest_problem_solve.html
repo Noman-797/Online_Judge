@@ -34,8 +34,6 @@
                     {% endif %}
                     <span class="text-xs sm:text-sm text-gray-500">•</span>
                     <span class="text-xs sm:text-sm text-gray-600 truncate">{{ problem.category.name }}</span>
-                    <span class="text-xs sm:text-sm text-gray-500">•</span>
-                    <span class="text-xs sm:text-sm text-blue-600 font-medium">Time Limit: {{ problem.time_limit }}s</span>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -301,12 +299,14 @@ let isResizing = false;
 // Initialize Monaco Editor
 require(['vs/editor/editor.main'], function () {
     const preferredLang = document.getElementById('language').value;
-    let initialCode = '#include <stdio.h>\n\nint main() {\n    // Your code here\n    return 0;\n}';
+    let initialCode = '';
     
-    if (preferredLang === 'cpp') {
-        initialCode = '#include <iostream>\nusing namespace std;\n\nint main() {\n    // Your code here\n    return 0;\n}';
+    if (preferredLang === 'c') {
+        initialCode = '#include <stdio.h>\n\nint main() {\n    \n    return 0;\n}';
+    } else if (preferredLang === 'cpp') {
+        initialCode = '#include <iostream>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}';
     } else if (preferredLang === 'python') {
-        initialCode = '# Your Python code here\n\n';
+        initialCode = '# Your Python code here\n';
     }
     
     editor = monaco.editor.create(document.getElementById('editor'), {
@@ -346,11 +346,11 @@ require(['vs/editor/editor.main'], function () {
         monaco.editor.setModelLanguage(editor.getModel(), lang);
         
         if (lang === 'c') {
-            editor.setValue('#include <stdio.h>\n\nint main() {\n    // Your code here\n    return 0;\n}');
+            editor.setValue('#include <stdio.h>\n\nint main() {\n    \n    return 0;\n}');
         } else if (lang === 'cpp') {
-            editor.setValue('#include <iostream>\nusing namespace std;\n\nint main() {\n    // Your code here\n    return 0;\n}');
+            editor.setValue('#include <iostream>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}');
         } else if (lang === 'python') {
-            editor.setValue('# Your Python code here\n\n');
+            editor.setValue('# Your Python code here\n');
         }
         
         // Save language preference
@@ -433,7 +433,7 @@ document.getElementById('testBtn').addEventListener('click', function() {
     this.disabled = true;
     this.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Testing...';
     
-    fetch('{% url "submissions:test_code" problem.slug %}', {
+    fetch('{% url "contests:contest_test_code" contest.slug problem.slug %}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -475,7 +475,7 @@ document.getElementById('submitBtn').addEventListener('click', function() {
     this.disabled = true;
     this.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Submitting...';
     
-    fetch('{% url "submissions:submit_ajax" problem.slug %}', {
+    fetch('{% url "contests:contest_submit_ajax" contest.slug problem.slug %}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -502,7 +502,6 @@ document.getElementById('submitBtn').addEventListener('click', function() {
                     localStorage.setItem('pendingSubmissions', JSON.stringify(pendingSubmissions));
                 }
             }
-            // No notifications for regular problems
             
             // Also store in localStorage for cross-tab communication
             localStorage.setItem('newSubmission', JSON.stringify({
@@ -769,6 +768,10 @@ function showError(message) {
         </div>
     `;
 }
+
+
+
+
 </script>
 {% endif %}
 {% endblock %}

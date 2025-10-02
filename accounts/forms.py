@@ -30,7 +30,7 @@ class CustomUserCreationForm(UserCreationForm):
         })
         self.fields['email'].widget.attrs.update({
             'class': 'input input-bordered w-full focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all duration-300 hover:border-secondary/50',
-            'placeholder': 'john@example.com'
+            'placeholder': 'Enter your email'
         })
         self.fields['password1'].widget.attrs.update({
             'class': 'input input-bordered w-full focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all duration-300 hover:border-secondary/50',
@@ -42,9 +42,16 @@ class CustomUserCreationForm(UserCreationForm):
         })
     
     def clean_email(self):
-        email = self.cleaned_data['email']
+        email = self.cleaned_data['email'].lower()
+        
+        # Check if email is Gmail
+        if not email.endswith('@gmail.com'):
+            raise forms.ValidationError("Only Gmail addresses are allowed for registration.")
+        
+        # Check for duplicate email
         if User.objects.filter(email=email).exists():
             raise forms.ValidationError("This email is already registered.")
+        
         return email
     
     def clean_username(self):
@@ -81,3 +88,16 @@ class UserUpdateForm(forms.ModelForm):
             'last_name': forms.TextInput(attrs={'class': 'input input-bordered w-full'}),
             'email': forms.EmailInput(attrs={'class': 'input input-bordered w-full'}),
         }
+    
+    def clean_email(self):
+        email = self.cleaned_data['email'].lower()
+        
+        # Check if email is Gmail
+        if not email.endswith('@gmail.com'):
+            raise forms.ValidationError("Only Gmail addresses are allowed.")
+        
+        # Check for duplicate email (exclude current user)
+        if User.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError("This email is already registered.")
+        
+        return email

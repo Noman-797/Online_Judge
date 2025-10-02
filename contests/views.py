@@ -6,6 +6,7 @@ from django.core.paginator import Paginator
 from django.utils import timezone
 from django.utils._os import safe_join
 from django.conf import settings
+from django.http import JsonResponse
 from .models import Contest, ContestParticipation, ContestProblem
 from .forms import ContestForm, ContestProblemForm
 from submissions.models import Submission
@@ -84,10 +85,23 @@ def contest_problems(request, slug):
     if contest.status == 'ended':
         participation = True  # Allow access to past contests
     
+    # Get solved problems for the user (exclude test submissions)
+    solved_problem_ids = set()
+    if request.user.is_authenticated:
+        solved_problem_ids = set(
+            Submission.objects.filter(
+                user=request.user,
+                problem__in=[cp.problem for cp in contest_problems],
+                verdict='AC',
+                is_test=False
+            ).values_list('problem_id', flat=True)
+        )
+    
     return render(request, 'contests/contest_problems.html', {
         'contest': contest,
         'contest_problems': contest_problems,
-        'participation': participation
+        'participation': participation,
+        'solved_problem_ids': solved_problem_ids
     })
 
 
@@ -262,7 +276,16 @@ def manage_contest_problems(request, slug):
 def remove_contest_problem(request, slug, problem_id):
     contest = get_object_or_404(Contest, slug=slug)
     contest_problem = get_object_or_404(ContestProblem, id=problem_id, contest=contest)
+    problem = contest_problem.problem
     contest_problem.delete()
+    
+    # Check if problem is used in any other contests
+    other_contest_problems = ContestProblem.objects.filter(problem=problem).exists()
+    if not other_contest_problems:
+        # If not used in any other contests, unmark as contest_only
+        problem.contest_only = False
+        problem.save()
+    
     messages.success(request, 'Problem removed from contest!')
     return redirect('contests:manage_problems', slug=slug)
 
@@ -380,4 +403,206 @@ def user_submissions(request, slug, user_id):
         'contest': contest,
         'user': user,
         'submissions': submissions
+    })
+
+
+@login_required
+def contest_problem_solve(request, slug, problem_slug):
+    """Contest-specific problem solve page"""
+    contest = get_object_or_404(Contest, slug=slug, is_active=True)
+    contest_problem = get_object_or_404(ContestProblem, contest=contest, problem__slug=problem_slug)
+    problem = contest_problem.problem
+    
+    # Check if user can access this contest problem
+    participation = None
+    if request.user.is_authenticated:
+        participation = ContestParticipation.objects.filter(contest=contest, user=request.user).first()
+        
+        # Check if user is banned
+        if participation and participation.is_banned:
+            messages.error(request, 'You have been banned from this contest.')
+            return redirect('contests:contest_detail', slug=slug)
+    
+    # For past contests, allow access without participation
+    if contest.status == 'ended':
+        participation = True
+    elif contest.status == 'running' and not participation:
+        messages.error(request, 'You must join the contest first.')
+        return redirect('contests:contest_detail', slug=slug)
+    
+    return render(request, 'contests/contest_problem_solve.html', {
+        'contest': contest,
+        'contest_problem': contest_problem,
+        'problem': problem
+    })
+
+
+@login_required
+def contest_test_code(request, slug, problem_slug):
+    """AJAX endpoint to test code against sample test cases for contest problems"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    contest = get_object_or_404(Contest, slug=slug, is_active=True)
+    contest_problem = get_object_or_404(ContestProblem, contest=contest, problem__slug=problem_slug)
+    problem = contest_problem.problem
+    
+    # Check access
+    participation = ContestParticipation.objects.filter(contest=contest, user=request.user).first()
+    if contest.status == 'running' and not participation:
+        return JsonResponse({'error': 'Must join contest first'}, status=403)
+    if participation and participation.is_banned:
+        return JsonResponse({'error': 'Banned from contest'}, status=403)
+    
+    try:
+        import json
+        data = json.loads(request.body)
+        code = data.get('code', '').strip()
+        language = data.get('language', 'cpp')
+        
+        if not code:
+            return JsonResponse({
+                'verdict': 'CE',
+                'execution_time': 0,
+                'memory_used': 0,
+                'test_cases_passed': 0,
+                'total_test_cases': 0,
+                'error_message': 'No code provided'
+            })
+        
+        # Create temporary submission for testing
+        temp_submission = Submission(
+            user=request.user,
+            problem=problem,
+            code=code,
+            language=language,
+            is_test=True
+        )
+        
+        # Evaluate against sample test cases only
+        from judge.multi_language_evaluator import MultiLanguageEvaluator
+        evaluator = MultiLanguageEvaluator()
+        
+        # Get sample test cases only
+        sample_test_cases = problem.test_cases.filter(is_sample=True)
+        if not sample_test_cases.exists():
+            # If no sample test cases, use first test case
+            sample_test_cases = problem.test_cases.all()[:1]
+        
+        result = evaluator.evaluate_submission(
+            code=code,
+            language=language,
+            test_cases=sample_test_cases,
+            time_limit=problem.time_limit,
+            memory_limit=problem.memory_limit
+        )
+        
+        # Update temp submission with results
+        temp_submission.verdict = result['verdict']
+        temp_submission.execution_time = result.get('execution_time')
+        temp_submission.memory_used = result.get('memory_used')
+        temp_submission.compilation_error = result.get('compilation_error', '')
+        temp_submission.runtime_error = result.get('runtime_error', '')
+        temp_submission.test_cases_passed = result.get('test_cases_passed', 0)
+        temp_submission.total_test_cases = result.get('total_test_cases', 0)
+        
+        return JsonResponse({
+            'verdict': temp_submission.verdict,
+            'execution_time': temp_submission.execution_time or 0,
+            'memory_used': temp_submission.memory_used or 0,
+            'test_cases_passed': temp_submission.test_cases_passed or 0,
+            'total_test_cases': temp_submission.total_test_cases or 0,
+            'error_message': temp_submission.compilation_error or temp_submission.runtime_error or None
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'verdict': 'RE',
+            'execution_time': 0,
+            'memory_used': 0,
+            'test_cases_passed': 0,
+            'total_test_cases': 0,
+            'error_message': str(e)
+        }, status=500)
+
+
+@login_required
+def contest_submit_ajax(request, slug, problem_slug):
+    """AJAX endpoint to submit code for contest problems"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    contest = get_object_or_404(Contest, slug=slug, is_active=True)
+    contest_problem = get_object_or_404(ContestProblem, contest=contest, problem__slug=problem_slug)
+    problem = contest_problem.problem
+    
+    # Check access
+    participation = ContestParticipation.objects.filter(contest=contest, user=request.user).first()
+    if contest.status == 'running' and not participation:
+        return JsonResponse({'error': 'Must join contest first'}, status=403)
+    if participation and participation.is_banned:
+        return JsonResponse({'error': 'Banned from contest'}, status=403)
+    
+    try:
+        import json
+        data = json.loads(request.body)
+        code = data.get('code', '').strip()
+        language = data.get('language', 'cpp')
+        
+        if not code:
+            return JsonResponse({
+                'verdict': 'CE',
+                'error_message': 'No code provided'
+            })
+        
+        # Create submission
+        submission = Submission.objects.create(
+            user=request.user,
+            problem=problem,
+            code=code,
+            language=language
+        )
+        
+        # Contest problems always use queue system
+        from judge.queue_manager import submission_queue
+        submission_queue.add_submission(submission.id)
+        
+        return JsonResponse({
+            'verdict': 'QUEUED',
+            'submission_id': submission.id,
+            'queue_position': submission_queue.get_queue_position(submission.id),
+            'queue_size': submission_queue.get_queue_size(),
+            'execution_time': 0,
+            'memory_used': 0,
+            'test_cases_passed': 0,
+            'total_test_cases': 0,
+            'error_message': None
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+def check_solved_status(request, slug):
+    """AJAX endpoint to check solved status of contest problems"""
+    contest = get_object_or_404(Contest, slug=slug, is_active=True)
+    contest_problems = ContestProblem.objects.filter(contest=contest).select_related('problem')
+    
+    # Get solved problems for the user
+    solved_problem_ids = set(
+        Submission.objects.filter(
+            user=request.user,
+            problem__in=[cp.problem for cp in contest_problems],
+            verdict='AC',
+            is_test=False
+        ).values_list('problem_id', flat=True)
+    )
+    
+    return JsonResponse({
+        'solved_problem_ids': list(solved_problem_ids)
     })

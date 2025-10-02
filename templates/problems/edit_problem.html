@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Edit {{ problem.title }} - Admin - All About Semicolons{% endblock %}
+{% block title %}Edit {{ problem.title }} - Admin{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto px-4 py-4 sm:py-6">
@@ -9,7 +9,7 @@
             <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
                 <h2 class="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
                     <i class="fas fa-edit"></i>
-                    Edit Problem: {{ problem.title }}
+                    Edit Problem
                 </h2>
                 <a href="{% url 'problems:admin_problems' %}" class="btn btn-outline btn-sm self-start sm:self-auto">
                     <i class="fas fa-arrow-left mr-1"></i>Back
@@ -22,9 +22,14 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div class="form-control">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Title
+                            <i class="fas fa-heading mr-1 text-blue-500"></i>Title
                         </label>
-                        {{ form.title }}
+                        <div class="relative">
+                            <input type="text" name="title" class="input input-bordered w-full pl-10 pr-4 py-3 text-sm border-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg" placeholder="Enter problem title..." value="{{ form.title.value|default:'' }}">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-edit text-gray-400"></i>
+                            </div>
+                        </div>
                         {% if form.title.errors %}
                             <p class="text-red-600 text-sm mt-1">{{ form.title.errors.0 }}</p>
                         {% endif %}
@@ -32,9 +37,19 @@
                     
                     <div class="form-control">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Slug
+                            <i class="fas fa-link mr-1 text-green-500"></i>Slug
                         </label>
-                        {{ form.slug }}
+                        <div class="relative">
+                            <input type="text" name="slug" class="input input-bordered w-full pl-10 pr-10 py-3 text-sm border-2 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-lg" placeholder="auto-generated-slug" value="{{ form.slug.value|default:'' }}">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-hashtag text-gray-400"></i>
+                            </div>
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                <button type="button" id="generateSlug" class="text-green-500 hover:text-green-700 p-1 rounded">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </div>
                         {% if form.slug.errors %}
                             <p class="text-red-600 text-sm mt-1">{{ form.slug.errors.0 }}</p>
                         {% endif %}
@@ -122,12 +137,26 @@
                 
                 <div class="form-control mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Tags
+                        <i class="fas fa-tags mr-1 text-purple-500"></i>Tags
                     </label>
-                    {{ form.tags }}
-                    <p class="text-sm text-gray-500 mt-1">
-                        Comma-separated tags (e.g., arrays, sorting, dynamic programming)
-                    </p>
+                    <div class="relative">
+                        <input type="text" name="tags" class="input input-bordered w-full pl-10 pr-4 py-3 text-sm border-2 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 rounded-lg" placeholder="arrays, sorting, dynamic-programming..." value="{{ form.tags.value|default:'' }}">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-hashtag text-gray-400"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" class="tag-btn px-3 py-1 bg-gray-100 hover:bg-purple-100 text-xs rounded-full border border-gray-300 hover:border-purple-300 transition-all" data-tag="arrays">arrays</button>
+                            <button type="button" class="tag-btn px-3 py-1 bg-gray-100 hover:bg-purple-100 text-xs rounded-full border border-gray-300 hover:border-purple-300 transition-all" data-tag="sorting">sorting</button>
+                            <button type="button" class="tag-btn px-3 py-1 bg-gray-100 hover:bg-purple-100 text-xs rounded-full border border-gray-300 hover:border-purple-300 transition-all" data-tag="dynamic-programming">dp</button>
+                            <button type="button" class="tag-btn px-3 py-1 bg-gray-100 hover:bg-purple-100 text-xs rounded-full border border-gray-300 hover:border-purple-300 transition-all" data-tag="strings">strings</button>
+                            <button type="button" class="tag-btn px-3 py-1 bg-gray-100 hover:bg-purple-100 text-xs rounded-full border border-gray-300 hover:border-purple-300 transition-all" data-tag="math">math</button>
+                            <button type="button" class="tag-btn px-3 py-1 bg-gray-100 hover:bg-purple-100 text-xs rounded-full border border-gray-300 hover:border-purple-300 transition-all" data-tag="greedy">greedy</button>
+                            <button type="button" class="tag-btn px-3 py-1 bg-gray-100 hover:bg-purple-100 text-xs rounded-full border border-gray-300 hover:border-purple-300 transition-all" data-tag="graph">graph</button>
+                            <button type="button" class="tag-btn px-3 py-1 bg-gray-100 hover:bg-purple-100 text-xs rounded-full border border-gray-300 hover:border-purple-300 transition-all" data-tag="binary-search">binary-search</button>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="form-control mb-6">
@@ -135,7 +164,7 @@
                         {{ form.contest_only }}
                         <div>
                             <span class="text-sm font-medium text-gray-700">Contest Only (Hide from public problem list)</span>
-                            <p class="text-sm text-gray-500 mt-1">Uncheck to make this problem visible in public problem list</p>
+                            <p class="text-sm text-gray-500 mt-1">Check this to make the problem visible only in contests</p>
                         </div>
                     </label>
                 </div>
@@ -179,6 +208,62 @@ fields.forEach(field => {
     editors[field].on('text-change', () => {
         textarea.value = editors[field].root.innerHTML;
     });
+});
+
+// Auto-generate slug from title
+function generateSlugFromTitle() {
+    const title = document.querySelector('input[name="title"]').value;
+    const slug = title.toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    document.querySelector('input[name="slug"]').value = slug;
+}
+
+// Auto-generate on title input
+document.querySelector('input[name="title"]').addEventListener('input', generateSlugFromTitle);
+
+// Manual generate button
+document.getElementById('generateSlug').addEventListener('click', generateSlugFromTitle);
+
+// Tag suggestions
+document.querySelectorAll('.tag-suggestion').forEach(button => {
+    button.addEventListener('click', function() {
+        const tag = this.dataset.tag;
+        const tagsInput = document.querySelector('input[name="tags"]');
+        const currentTags = tagsInput.value.split(',').map(t => t.trim()).filter(t => t);
+        
+        if (!currentTags.includes(tag)) {
+            currentTags.push(tag);
+            tagsInput.value = currentTags.join(', ');
+            this.classList.add('bg-blue-100', 'text-blue-700');
+            this.classList.remove('bg-gray-100');
+        }
+    });
+});
+
+// Update tag suggestions based on current tags
+document.querySelector('input[name="tags"]').addEventListener('input', function() {
+    const currentTags = this.value.split(',').map(t => t.trim()).filter(t => t);
+    document.querySelectorAll('.tag-suggestion').forEach(button => {
+        const tag = button.dataset.tag;
+        if (currentTags.includes(tag)) {
+            button.classList.add('bg-blue-100', 'text-blue-700');
+            button.classList.remove('bg-gray-100');
+        } else {
+            button.classList.remove('bg-blue-100', 'text-blue-700');
+            button.classList.add('bg-gray-100');
+        }
+    });
+});
+
+// Initialize tag suggestions on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const tagsInput = document.querySelector('input[name="tags"]');
+    if (tagsInput.value) {
+        tagsInput.dispatchEvent(new Event('input'));
+    }
 });
 </script>
 {% endblock %}

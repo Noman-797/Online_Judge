@@ -126,8 +126,8 @@ class SubmissionQueue:
                 logger = logging.getLogger(__name__)
                 logger.error(f"Failed to update submission {submission_id} after error: {recovery_error}")
 
-# Global queue instance - adjust based on hosting platform
-# PythonAnywhere: 2-3 workers (threading limitations)
+# Global queue instance - optimized for better performance
+# Local/Development: 5-10 workers
 # Railway/Render: 10-20 workers
 # DigitalOcean/AWS: 20-50+ workers
-submission_queue = SubmissionQueue(max_workers=2)
+submission_queue = SubmissionQueue(max_workers=8)

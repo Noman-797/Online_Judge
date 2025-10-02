@@ -3,165 +3,180 @@
 {% block title %}My Submissions - Semicolons{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 gap-4">
-        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">My Submissions</h1>
-        <select name="verdict" onchange="window.location.href='?verdict=' + this.value" class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-full sm:w-auto">
-            <option value="">All Verdicts</option>
-            <option value="QUEUED" {% if current_verdict == 'QUEUED' %}selected{% endif %}>Queued</option>
-            <option value="JUDGING" {% if current_verdict == 'JUDGING' %}selected{% endif %}>Judging</option>
-            <option value="AC" {% if current_verdict == 'AC' %}selected{% endif %}>Accepted</option>
-            <option value="WA" {% if current_verdict == 'WA' %}selected{% endif %}>Wrong Answer</option>
-            <option value="CE" {% if current_verdict == 'CE' %}selected{% endif %}>Compilation Error</option>
-            <option value="RE" {% if current_verdict == 'RE' %}selected{% endif %}>Runtime Error</option>
-            <option value="TLE" {% if current_verdict == 'TLE' %}selected{% endif %}>Time Limit Exceeded</option>
-            <option value="MLE" {% if current_verdict == 'MLE' %}selected{% endif %}>Memory Limit Exceeded</option>
-            <option value="PE" {% if current_verdict == 'PE' %}selected{% endif %}>Presentation Error</option>
-        </select>
+<div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8">
+    <!-- Header -->
+    <div class="flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6 lg:mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="text-center sm:text-left">
+                <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">My Submissions</h1>
+                <p class="text-xs sm:text-sm text-gray-600 mt-1">Track your problem-solving progress</p>
+            </div>
+            
+            <!-- Filter Dropdown -->
+            <div class="flex justify-center sm:justify-end">
+                <select name="verdict" onchange="window.location.href='?verdict=' + this.value" class="px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-full sm:w-auto max-w-xs">
+                    <option value="">All Verdicts</option>
+                    <option value="AC" {% if current_verdict == 'AC' %}selected{% endif %}>Accepted</option>
+                    <option value="WA" {% if current_verdict == 'WA' %}selected{% endif %}>Wrong Answer</option>
+                    <option value="CE" {% if current_verdict == 'CE' %}selected{% endif %}>Compilation Error</option>
+                    <option value="RE" {% if current_verdict == 'RE' %}selected{% endif %}>Runtime Error</option>
+                    <option value="TLE" {% if current_verdict == 'TLE' %}selected{% endif %}>Time Limit Exceeded</option>
+                    <option value="MLE" {% if current_verdict == 'MLE' %}selected{% endif %}>Memory Limit Exceeded</option>
+                    <option value="PE" {% if current_verdict == 'PE' %}selected{% endif %}>Presentation Error</option>
+                </select>
+            </div>
+        </div>
     </div>
 
-    <!-- Submissions Table -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full min-w-full">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Problem</th>
-                        <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Language</th>
-                        <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Verdict</th>
-                        <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Time</th>
-                        <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Memory</th>
-                        <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden xl:table-cell">Submitted</th>
-                        <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-            </thead>
-            <tbody>
+    <!-- Submissions Content -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+        {% if submissions %}
+            <!-- Mobile Card Layout -->
+            <div class="lg:hidden divide-y divide-gray-200">
                 {% for submission in submissions %}
-                        <tr class="hover:bg-gray-50 border-b border-gray-200">
-                            <td class="px-3 sm:px-6 py-4">
-                                <div>
-                                    <div class="font-medium text-gray-900 text-sm sm:text-base">
-                                        <a href="{% url 'problems:problem_detail' submission.problem.slug %}" 
-                                           class="hover:text-indigo-600">
+                    <div class="p-2 sm:p-3 hover:bg-gray-50">
+                        <!-- Problem Info -->
+                        <div class="mb-2">
+                            <div class="flex items-start justify-between mb-1.5">
+                                <a href="{% url 'problems:problem_detail' submission.problem.slug %}" class="text-sm font-medium text-gray-900 hover:text-indigo-600 leading-tight">
+                                    {{ submission.problem.title }}
+                                </a>
+                                <span class="{{ submission.get_verdict_display_class }} font-medium text-xs px-1.5 py-0.5 rounded ml-2 flex-shrink-0">
+                                    {% if submission.verdict == 'AC' %}Accepted{% elif submission.verdict == 'WA' %}Wrong Answer{% elif submission.verdict == 'CE' %}Compilation Error{% elif submission.verdict == 'RE' %}Runtime Error{% elif submission.verdict == 'TLE' %}Time Limit Exceeded{% elif submission.verdict == 'MLE' %}Memory Limit Exceeded{% elif submission.verdict == 'PE' %}Presentation Error{% else %}{{ submission.verdict }}{% endif %}
+                                </span>
+                            </div>
+                            
+                            <!-- Tags and Info -->
+                            <div class="flex flex-wrap items-center gap-1 mb-1.5">
+                                {% if submission.problem.difficulty == 'Easy' %}
+                                    <span class="inline-flex px-1.5 py-0.5 text-xs font-medium rounded bg-green-100 text-green-800">Easy</span>
+                                {% elif submission.problem.difficulty == 'Medium' %}
+                                    <span class="inline-flex px-1.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-800">Medium</span>
+                                {% else %}
+                                    <span class="inline-flex px-1.5 py-0.5 text-xs font-medium rounded bg-red-100 text-red-800">Hard</span>
+                                {% endif %}
+                                <span class="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{{ submission.language|upper }}</span>
+                                <span class="text-xs text-gray-500">{{ submission.submitted_at|date:"M d, H:i" }}</span>
+
+                            </div>
+                            
+                            <!-- Test Cases -->
+                            {% if submission.test_cases_passed and submission.total_test_cases %}
+                                <div class="text-xs text-gray-500 mb-1.5">
+                                    {{ submission.test_cases_passed }}/{{ submission.total_test_cases }} passed
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Actions -->
+                        <div>
+                            <a href="{% url 'submissions:submission_detail' submission.id %}" class="w-full bg-indigo-600 text-white px-2.5 py-1.5 rounded text-xs font-medium hover:bg-indigo-700 text-center block">
+                                <i class="fas fa-eye mr-1"></i>View Details
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Desktop Table Layout -->
+            <div class="hidden lg:block overflow-x-auto">
+                <table class="w-full table-fixed bg-white rounded-lg shadow-sm border border-gray-200">
+                    <thead>
+                        <tr class="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-gray-200">
+                            <th class="w-2/5 px-4 py-4 text-left text-sm font-bold text-gray-800 uppercase tracking-wide">Problem</th>
+                            <th class="w-1/8 px-3 py-4 text-center text-sm font-bold text-gray-800 uppercase tracking-wide">Language</th>
+                            <th class="w-1/4 px-3 py-4 text-center text-sm font-bold text-gray-800 uppercase tracking-wide">Verdict</th>
+                            <th class="w-1/6 px-3 py-4 text-center text-sm font-bold text-gray-800 uppercase tracking-wide">Submitted</th>
+                            <th class="w-1/6 px-3 py-4 text-center text-sm font-bold text-gray-800 uppercase tracking-wide">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        {% for submission in submissions %}
+                            <tr class="hover:bg-indigo-50 transition-all duration-200 group">
+                                <td class="px-4 py-4">
+                                    <div class="font-semibold text-gray-900 text-sm mb-2">
+                                        <a href="{% url 'problems:problem_detail' submission.problem.slug %}" class="hover:text-indigo-600 transition-colors group-hover:text-indigo-700">
                                             {{ submission.problem.title }}
                                         </a>
                                     </div>
-                                    <div class="text-sm text-gray-600 mt-1 flex flex-wrap items-center gap-2">
+                                    <div class="flex items-center gap-2">
                                         {% if submission.problem.difficulty == 'Easy' %}
-                                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Easy</span>
+                                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 border border-green-200">Easy</span>
                                         {% elif submission.problem.difficulty == 'Medium' %}
-                                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Medium</span>
+                                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200">Medium</span>
                                         {% else %}
-                                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Hard</span>
+                                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-200">Hard</span>
                                         {% endif %}
-                                        <span class="sm:hidden text-xs text-gray-500">{{ submission.language|upper }}</span>
-                                        <span class="md:hidden text-xs text-gray-500">
-                                            {% if submission.execution_time %}
-                                                {{ submission.execution_time|floatformat:2 }}s
-                                            {% endif %}
+                                        <span class="text-xs text-gray-500">{{ submission.problem.category.name }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-3 py-4 text-center">
+                                    <span class="inline-flex px-2 py-1 text-xs font-bold rounded-md bg-gray-100 text-gray-800 border border-gray-200">
+                                        {{ submission.language|upper }}
+                                    </span>
+                                </td>
+                                <td class="px-3 py-4 text-center">
+                                    <div class="flex flex-col items-center space-y-1">
+                                        <span class="{{ submission.get_verdict_display_class }} font-bold text-xs px-3 py-1 rounded-md shadow-sm">
+                                            {% if submission.verdict == 'AC' %}Accepted{% elif submission.verdict == 'WA' %}Wrong Answer{% elif submission.verdict == 'CE' %}Compilation Error{% elif submission.verdict == 'RE' %}Runtime Error{% elif submission.verdict == 'TLE' %}Time Limit Exceeded{% elif submission.verdict == 'MLE' %}Memory Limit Exceeded{% elif submission.verdict == 'PE' %}Presentation Error{% else %}{{ submission.verdict }}{% endif %}
                                         </span>
-                                        <span class="xl:hidden text-xs text-gray-500">{{ submission.submitted_at|date:"M d" }}</span>
+                                        {% if submission.test_cases_passed and submission.total_test_cases %}
+                                            <span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded border">{{ submission.test_cases_passed }}/{{ submission.total_test_cases }} passed</span>
+                                        {% endif %}
                                     </div>
-                                </div>
-                            </td>
-                            <td class="px-3 sm:px-6 py-4 text-gray-600 font-medium text-sm hidden sm:table-cell">{{ submission.language|upper }}</td>
-                            <td class="px-3 sm:px-6 py-4">
-                                <span class="{{ submission.get_verdict_display_class }} font-medium text-xs sm:text-sm">
-                                    {% if submission.verdict == 'QUEUED' %}
-                                        Queued
-                                    {% elif submission.verdict == 'JUDGING' %}
-                                        Judging
-                                    {% elif submission.verdict == 'AC' %}
-                                        Accepted
-                                    {% elif submission.verdict == 'WA' %}
-                                        Wrong Answer
-                                    {% elif submission.verdict == 'CE' %}
-                                        Compilation Error
-                                    {% elif submission.verdict == 'RE' %}
-                                        Runtime Error
-                                    {% elif submission.verdict == 'TLE' %}
-                                        Time Limit Exceeded
-                                    {% elif submission.verdict == 'MLE' %}
-                                        Memory Limit Exceeded
-                                    {% elif submission.verdict == 'PE' %}
-                                        Presentation Error
-                                    {% else %}
-                                        {{ submission.verdict }}
-                                    {% endif %}
-                                </span>
-                                {% if submission.test_cases_passed and submission.total_test_cases %}
-                                    <div class="text-xs text-gray-500 mt-1">
-                                        {{ submission.test_cases_passed }}/{{ submission.total_test_cases }} passed
+                                </td>
+                                <td class="px-3 py-4 text-center">
+                                    <div class="text-sm font-medium text-gray-700">
+                                        {{ submission.submitted_at|date:"M d" }}
                                     </div>
-                                {% endif %}
-                            </td>
-                            <td class="px-3 sm:px-6 py-4 text-gray-600 text-sm hidden md:table-cell">
-                                {% if submission.execution_time %}
-                                    {{ submission.execution_time|floatformat:3 }}s
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </td>
-                            <td class="px-3 sm:px-6 py-4 text-gray-600 text-sm hidden lg:table-cell">
-                                {% if submission.memory_used %}
-                                    {{ submission.memory_used }} KB
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </td>
-                            <td class="px-3 sm:px-6 py-4 text-gray-600 text-sm hidden xl:table-cell">
-                                {{ submission.submitted_at|date:"M d, H:i" }}
-                            </td>
-                            <td class="px-3 sm:px-6 py-4">
-                                <div class="flex flex-col sm:flex-row gap-1 sm:gap-2">
-                                    <a href="{% url 'submissions:submission_detail' submission.id %}" 
-                                       class="bg-indigo-600 text-white px-2 py-1 rounded text-xs hover:bg-indigo-700 text-center">
-                                        <i class="fas fa-eye mr-1"></i>View
+                                    <div class="text-xs text-gray-500">
+                                        {{ submission.submitted_at|date:"H:i" }}
+                                    </div>
+                                </td>
+                                <td class="px-3 py-4 text-center">
+                                    <a href="{% url 'submissions:submission_detail' submission.id %}" class="inline-flex items-center px-3 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-md hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 transition-all duration-200 shadow-sm hover:shadow-md">
+                                        <i class="fas fa-eye mr-1.5"></i>
+                                        View
                                     </a>
-                                    <a href="{% url 'problems:problem_detail' submission.problem.slug %}" 
-                                       class="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700 text-center">
-                                        <i class="fas fa-code mr-1"></i>Problem
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                {% empty %}
-                        <tr>
-                            <td colspan="7" class="px-3 sm:px-6 py-8 sm:py-12 text-center text-gray-600">
-                                <i class="fas fa-code text-3xl sm:text-4xl mb-3 sm:mb-4 block"></i>
-                                <div class="text-base sm:text-lg font-medium mb-2">No submissions yet</div>
-                                <div class="text-sm mb-4">Start solving problems to see your submissions here</div>
-                                <a href="{% url 'problems:problem_list' %}" 
-                                   class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm sm:text-base">
-                                    Browse Problems
-                                </a>
-                            </td>
-                        </tr>
-                {% endfor %}
-            </tbody>
-            </table>
-        </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-8 sm:py-12 px-4">
+                <i class="fas fa-code text-2xl sm:text-3xl lg:text-4xl text-gray-400 mb-3 sm:mb-4"></i>
+                <h3 class="text-sm sm:text-base lg:text-lg font-medium text-gray-900 mb-2">No submissions yet</h3>
+                <p class="text-xs sm:text-sm text-gray-500 mb-4 sm:mb-6">Start solving problems to see your submissions here</p>
+                <a href="{% url 'problems:problem_list' %}" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-xs sm:text-sm font-medium inline-flex items-center gap-2">
+                    <i class="fas fa-search"></i>
+                    <span>Browse Problems</span>
+                </a>
+            </div>
+        {% endif %}
     </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+        <div class="flex justify-center mt-6">
+            <div class="flex gap-2">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1{% if current_verdict %}&verdict={{ current_verdict }}{% endif %}" class="px-3 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded text-sm font-medium">First</a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% if current_verdict %}&verdict={{ current_verdict }}{% endif %}" class="px-3 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded text-sm font-medium">Prev</a>
+                {% endif %}
+                <span class="px-3 py-2 bg-indigo-600 text-white rounded text-sm font-medium">
+                    {{ page_obj.number }}/{{ page_obj.paginator.num_pages }}
+                </span>
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if current_verdict %}&verdict={{ current_verdict }}{% endif %}" class="px-3 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded text-sm font-medium">Next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}{% if current_verdict %}&verdict={{ current_verdict }}{% endif %}" class="px-3 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded text-sm font-medium">Last</a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
 </div>
 
-<!-- Pagination -->
-{% if is_paginated %}
-    <div class="flex justify-center mt-6">
-        <div class="flex flex-wrap justify-center gap-1 sm:gap-2">
-            {% if page_obj.has_previous %}
-                <a href="?page=1" class="px-2 sm:px-3 py-2 bg-gray-200 text-gray-900 hover:bg-gray-300 rounded text-xs sm:text-sm font-medium">First</a>
-                <a href="?page={{ page_obj.previous_page_number }}" class="px-2 sm:px-3 py-2 bg-gray-200 text-gray-900 hover:bg-gray-300 rounded text-xs sm:text-sm font-medium">Previous</a>
-            {% endif %}
-            
-            <span class="px-2 sm:px-3 py-2 bg-indigo-600 text-white rounded text-xs sm:text-sm font-medium">
-                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-            </span>
-            
-            {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}" class="px-2 sm:px-3 py-2 bg-gray-200 text-gray-900 hover:bg-gray-300 rounded text-xs sm:text-sm font-medium">Next</a>
-                <a href="?page={{ page_obj.paginator.num_pages }}" class="px-2 sm:px-3 py-2 bg-gray-200 text-gray-900 hover:bg-gray-300 rounded text-xs sm:text-sm font-medium">Last</a>
-            {% endif %}
-        </div>
-    </div>
-{% endif %}
+</div>
 {% endblock %}

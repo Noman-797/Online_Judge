@@ -8,7 +8,7 @@ def home(request):
     recent_problems = Problem.objects.filter(is_active=True)[:6]
     total_problems = Problem.objects.filter(is_active=True).count()
     total_users = User.objects.count()
-    total_submissions = Submission.objects.count()
+    total_submissions = Submission.objects.filter(is_test=False).count()
     
     context = {
         'recent_problems': recent_problems,

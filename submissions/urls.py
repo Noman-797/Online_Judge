@@ -12,4 +12,5 @@ urlpatterns = [
     path('all/', views.all_submissions, name='all_submissions'),
     path('status/<int:submission_id>/', views.check_submission_status, name='check_status'),
     path('queue-status/', views.queue_status, name='queue_status'),
+    path('recent-submissions/', views.recent_submissions, name='recent_submissions'),
 ]
