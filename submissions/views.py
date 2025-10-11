@@ -53,22 +53,41 @@ def submit_solution(request, slug):
                     'execution_time': 0,
                     'memory_used': 0,
                     'test_cases_passed': 0,
-                    'total_test_cases': 0
+                    'total_test_cases': 0,
+                    'add_to_pending': True
                 })
             else:
                 # Direct evaluation for regular problems
-                evaluator = CodeEvaluator(submission)
-                evaluator.evaluate()
-                
-                return JsonResponse({
-                    'verdict': submission.verdict,
-                    'message': 'Submission evaluated',
-                    'submission_id': submission.id,
-                    'execution_time': float(submission.execution_time) if submission.execution_time else 0,
-                    'memory_used': submission.memory_used or 0,
-                    'test_cases_passed': submission.test_cases_passed or 0,
-                    'total_test_cases': submission.total_test_cases or 0
-                })
+                try:
+                    evaluator = CodeEvaluator(submission)
+                    evaluator.evaluate()
+                    
+                    return JsonResponse({
+                        'verdict': submission.verdict,
+                        'message': 'Submission evaluated',
+                        'submission_id': submission.id,
+                        'execution_time': float(submission.execution_time) if submission.execution_time else 0,
+                        'memory_used': submission.memory_used or 0,
+                        'test_cases_passed': submission.test_cases_passed or 0,
+                        'total_test_cases': submission.total_test_cases or 0,
+                        'compilation_error': submission.compilation_error or None,
+                        'runtime_error': submission.runtime_error or None
+                    })
+                except Exception as e:
+                    submission.verdict = 'RE'
+                    submission.runtime_error = str(e)[:500]
+                    submission.save()
+                    
+                    return JsonResponse({
+                        'verdict': 'RE',
+                        'message': 'Runtime error during evaluation',
+                        'submission_id': submission.id,
+                        'execution_time': 0,
+                        'memory_used': 0,
+                        'test_cases_passed': 0,
+                        'total_test_cases': 0,
+                        'error_message': str(e)[:200]
+                    })
         
         # Handle regular form submission
         code = request.POST.get('code', '').strip()
@@ -93,9 +112,15 @@ def submit_solution(request, slug):
             messages.success(request, 'Contest submission queued for manual processing!')
         else:
             # Direct evaluation for regular problems
-            evaluator = CodeEvaluator(submission)
-            evaluator.evaluate()
-            messages.success(request, 'Submission evaluated successfully!')
+            try:
+                evaluator = CodeEvaluator(submission)
+                evaluator.evaluate()
+                messages.success(request, 'Submission evaluated successfully!')
+            except Exception as e:
+                submission.verdict = 'RE'
+                submission.runtime_error = str(e)[:500]
+                submission.save()
+                messages.error(request, f'Evaluation failed: {str(e)[:100]}')
         
         # Redirect to submission detail page
         return redirect('submissions:submission_detail', submission_id=submission.id)
@@ -256,22 +281,38 @@ def submit_ajax(request, slug):
                 'memory_used': 0,
                 'test_cases_passed': 0,
                 'total_test_cases': 0,
-                'error_message': None
+                'error_message': None,
+                'add_to_pending': True
             })
         else:
             # Direct evaluation for regular problems
-            evaluator = CodeEvaluator(submission)
-            evaluator.evaluate()
-            
-            return JsonResponse({
-                'verdict': submission.verdict,
-                'submission_id': submission.id,
-                'execution_time': float(submission.execution_time) if submission.execution_time else 0,
-                'memory_used': submission.memory_used or 0,
-                'test_cases_passed': submission.test_cases_passed or 0,
-                'total_test_cases': submission.total_test_cases or 0,
-                'error_message': submission.compilation_error or submission.runtime_error or None
-            })
+            try:
+                evaluator = CodeEvaluator(submission)
+                evaluator.evaluate()
+                
+                return JsonResponse({
+                    'verdict': submission.verdict,
+                    'submission_id': submission.id,
+                    'execution_time': float(submission.execution_time) if submission.execution_time else 0,
+                    'memory_used': submission.memory_used or 0,
+                    'test_cases_passed': submission.test_cases_passed or 0,
+                    'total_test_cases': submission.total_test_cases or 0,
+                    'error_message': submission.compilation_error or submission.runtime_error or None
+                })
+            except Exception as e:
+                submission.verdict = 'RE'
+                submission.runtime_error = str(e)[:500]
+                submission.save()
+                
+                return JsonResponse({
+                    'verdict': 'RE',
+                    'submission_id': submission.id,
+                    'execution_time': 0,
+                    'memory_used': 0,
+                    'test_cases_passed': 0,
+                    'total_test_cases': 0,
+                    'error_message': str(e)[:200]
+                })
         
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)

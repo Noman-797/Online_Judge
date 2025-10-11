@@ -450,7 +450,7 @@ def user_submissions(request, slug, user_id):
 def contest_problem_solve(request, slug, problem_slug):
     """Contest-specific problem solve page"""
     contest = get_object_or_404(Contest, slug=slug, is_active=True)
-    contest_problem = get_object_or_404(ContestProblem, contest=contest, problem__slug=problem_slug)
+    contest_problem = get_object_or_404(ContestProblem.objects.select_related('problem').prefetch_related('problem__test_cases'), contest=contest, problem__slug=problem_slug)
     problem = contest_problem.problem
     
     # Check if user can access this contest problem
@@ -552,18 +552,28 @@ def contest_test_code(request, slug, problem_slug):
         )
         
         # Evaluate against sample test cases only
-        from judge.evaluator import CodeEvaluator
-        evaluator = CodeEvaluator(temp_submission)
-        evaluator.evaluate(sample_only=True)
-        
-        return JsonResponse({
-            'verdict': temp_submission.verdict,
-            'execution_time': temp_submission.execution_time or 0,
-            'memory_used': temp_submission.memory_used or 0,
-            'test_cases_passed': temp_submission.test_cases_passed or 0,
-            'total_test_cases': temp_submission.total_test_cases or 0,
-            'error_message': temp_submission.compilation_error or temp_submission.runtime_error or None
-        })
+        try:
+            from judge.evaluator import CodeEvaluator
+            evaluator = CodeEvaluator(temp_submission)
+            evaluator.evaluate(sample_only=True)
+            
+            return JsonResponse({
+                'verdict': temp_submission.verdict,
+                'execution_time': temp_submission.execution_time or 0,
+                'memory_used': temp_submission.memory_used or 0,
+                'test_cases_passed': temp_submission.test_cases_passed or 0,
+                'total_test_cases': temp_submission.total_test_cases or 0,
+                'error_message': temp_submission.compilation_error or temp_submission.runtime_error or None
+            })
+        except Exception as e:
+            return JsonResponse({
+                'verdict': 'RE',
+                'execution_time': 0,
+                'memory_used': 0,
+                'test_cases_passed': 0,
+                'total_test_cases': 0,
+                'error_message': f'Test evaluation failed: {str(e)[:100]}'
+            })
         
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
@@ -613,24 +623,35 @@ def contest_submit_ajax(request, slug, problem_slug):
             })
         
         # Create submission
-        submission = Submission.objects.create(
-            user=request.user,
-            problem=problem,
-            code=code,
-            language=language
-        )
-        
-        # Contest problems always queued for manual processing
-        return JsonResponse({
-            'verdict': 'QUEUED',
-            'submission_id': submission.id,
-            'execution_time': 0,
-            'memory_used': 0,
-            'test_cases_passed': 0,
-            'total_test_cases': 0,
-            'error_message': None,
-            'add_to_pending': True  # Signal to add to pending list
-        })
+        try:
+            submission = Submission.objects.create(
+                user=request.user,
+                problem=problem,
+                code=code,
+                language=language
+            )
+            
+            # Contest problems always queued for manual processing
+            return JsonResponse({
+                'verdict': 'QUEUED',
+                'submission_id': submission.id,
+                'execution_time': 0,
+                'memory_used': 0,
+                'test_cases_passed': 0,
+                'total_test_cases': 0,
+                'error_message': None,
+                'add_to_pending': True  # Signal to add to pending list
+            })
+        except Exception as e:
+            return JsonResponse({
+                'verdict': 'RE',
+                'submission_id': None,
+                'execution_time': 0,
+                'memory_used': 0,
+                'test_cases_passed': 0,
+                'total_test_cases': 0,
+                'error_message': f'Failed to create submission: {str(e)[:100]}'
+            })
         
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)

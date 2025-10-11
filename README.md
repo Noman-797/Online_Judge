@@ -1,221 +1,149 @@
 # All About Semicolons - Online Judge System
 
-A comprehensive online judge platform designed for students and beginners to practice C and C++ programming problems. Built with Django and styled with Tailwind CSS + DaisyUI.
+A comprehensive online judge platform designed for C/C++/Python programming practice and contests. Optimized for PythonAnywhere deployment.
 
-## Features
+## 🚀 Quick Start
 
-### 🎯 Core Functionality
-- **User Management**: Registration, login, logout, and user profiles
-- **Problem Management**: Create, edit, and categorize programming problems
-- **Code Submission**: Submit C/C++ solutions with real-time evaluation
-- **Automated Judging**: Compile, run, and evaluate code against test cases
-- **Admin Panel**: Comprehensive admin interface for managing problems and users
-
-### 🔧 Technical Features
-- **Sandboxed Execution**: Safe code execution with time and memory limits
-- **Multiple Verdicts**: AC, WA, CE, RE, TLE, MLE, PE support
-- **Real-time Updates**: AJAX-powered submission status updates
-- **Responsive Design**: Mobile-friendly interface with Tailwind CSS
-- **SQLite Database**: Lightweight database for easy deployment
-
-### 📊 User Features
-- **Progress Tracking**: Track solved problems and submission history
-- **Submission History**: View detailed submission results and code
-- **Problem Filtering**: Filter by difficulty, category, and tags
-- **Success Rate**: Calculate and display user success statistics
-
-## Installation & Setup
-
-### Prerequisites
-- Python 3.8+
-- GCC/G++ compiler (for code evaluation)
-- Git (for version control)
-
-### Local Development Setup
-
-1. **Clone the repository**
+### Local Development
 ```bash
+# Clone the repository
 git clone <your-repo-url>
 cd Online_Judge
-```
 
-2. **Create virtual environment**
-```bash
+# Create virtual environment
 python -m venv venv
 # Windows
 venv\Scripts\activate
 # Linux/Mac
 source venv/bin/activate
-```
 
-3. **Install dependencies**
-```bash
-pip install -r requirements.txt
-```
+# Install dependencies and setup
+python setup.py
 
-4. **Run migrations**
-```bash
-python manage.py migrate
-```
+# Create superuser
+python manage.py createsuperuser
 
-5. **Create sample data**
-```bash
-python create_sample_data.py
-```
-
-6. **Run development server**
-```bash
+# Run development server
 python manage.py runserver
 ```
 
-7. **Create admin user**
+### PythonAnywhere Deployment
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
+
+## 🎯 Features
+
+### Core Functionality
+- **Multi-language Support**: C, C++, and Python
+- **Real-time Evaluation**: Automated code compilation and testing
+- **Contest System**: Timed programming contests with leaderboards
+- **User Management**: Registration, profiles, and progress tracking
+- **Admin Panel**: Complete problem and user management
+- **Communication System**: User-admin messaging
+
+### Technical Features
+- **Secure Execution**: Sandboxed code execution with time/memory limits
+- **Multiple Verdicts**: AC, WA, CE, RE, TLE, MLE, PE support
+- **Real-time Notifications**: AJAX-powered status updates
+- **Responsive Design**: Mobile-friendly interface
+- **Database Optimization**: Indexed queries for performance
+
+## 📊 System Architecture
+
+### Applications
+- `accounts/` - User authentication and profiles
+- `problems/` - Problem management and categories
+- `submissions/` - Code submission and evaluation
+- `judge/` - Core evaluation engine
+- `contests/` - Contest management
+- `communications/` - Messaging system
+
+### Key Components
+- **CodeEvaluator**: Handles compilation and execution
+- **Queue System**: Manual processing for contest submissions
+- **Notification System**: Real-time updates via JavaScript
+- **Security Layer**: Input validation and sandboxing
+
+## 🔧 Configuration
+
+### Environment Variables (.env)
 ```bash
+SECRET_KEY=your-secret-key
+DEBUG=False
+DB_NAME=yourusername$default
+DB_USER=yourusername
+DB_PASSWORD=your-password
+DB_HOST=yourusername.mysql.pythonanywhere-services.com
+```
+
+### Judge Settings
+- Time Limit: 2 seconds
+- Memory Limit: 128 MB
+- Code Size Limit: 50 KB
+- Compilation Timeout: 10 seconds
+
+## 🛠️ Management Commands
+
+```bash
+# Create sample data
+python manage.py create_sample_data
+
+# Process queued submissions
+python manage.py process_queued
+
+# Create admin user
 python manage.py create_admin
 ```
 
-8. **Access the application**
-- Open http://127.0.0.1:8000 in your browser
-- Admin login: `ojadmin/OJAdmin2024!`
-- Student login: `student/student123`
-- Or register as a new user
+## 📱 API Endpoints
 
-## Project Structure
+### Submissions
+- `POST /submissions/ajax/<slug>/` - Submit code
+- `GET /submissions/status/<id>/` - Check submission status
+- `POST /submissions/test/<slug>/` - Test against samples
 
-```
-Online_Judge/
-├── Online_Judge/          # Main project settings
-│   ├── settings.py        # Django settings
-│   ├── urls.py           # Main URL configuration
-│   ├── wsgi.py           # WSGI configuration
-│   └── asgi.py           # ASGI configuration
-├── accounts/              # User management app
-│   ├── models.py         # User profile models
-│   ├── views.py          # Authentication views
-│   ├── forms.py          # User forms
-│   └── management/       # Custom management commands
-├── problems/              # Problem management app
-│   ├── models.py         # Problem and category models
-│   ├── views.py          # Problem CRUD views
-│   ├── forms.py          # Problem forms
-│   └── admin.py          # Admin interface
-├── submissions/           # Code submission app
-│   ├── models.py         # Submission models
-│   ├── views.py          # Submission handling
-│   └── forms.py          # Submission forms
-├── judge/                 # Code evaluation engine
-│   ├── evaluator.py      # Core evaluation logic
-│   ├── compiler_check.py # Compiler verification
-│   └── management/       # Testing commands
-├── templates/             # HTML templates
-│   ├── base.html         # Base template
-│   ├── home.html         # Homepage
-│   ├── accounts/         # User templates
-│   ├── problems/         # Problem templates
-│   ├── submissions/      # Submission templates
-│   └── components/       # Reusable components
-├── static/                # Static files
-│   ├── css/              # Stylesheets
-│   │   ├── custom.css    # Main stylesheet
-│   │   └── responsive.css # Responsive styles
-│   └── js/               # JavaScript files
-├── temp/                  # Temporary files for code execution
-├── db.sqlite3            # SQLite database
-├── manage.py             # Django management script
-├── requirements.txt      # Python dependencies
-├── create_sample_data.py # Sample data creation script
-├── setup_compiler.py     # Compiler setup utility
-└── .env.example          # Environment variables template
-```
+### Communications
+- `GET /communications/check-unread/` - Check unread messages
+- `POST /communications/send/` - Send message to admin
 
-## Usage Guide
+## 🔒 Security Features
 
-### For Students/Users
-
-1. **Register an Account**
-   - Click "Register" and fill in your details
-   - Verify your email and login
-
-2. **Browse Problems**
-   - Visit the Problems page
-   - Filter by difficulty, category, or search by keywords
-   - Click on any problem to view details
-
-3. **Submit Solutions**
-   - Click "Submit Solution" on any problem
-   - Choose your language (C or C++)
-   - Write your code in the editor
-   - Submit and wait for evaluation results
-
-4. **Track Progress**
-   - Visit your Profile to see statistics
-   - Check "My Submissions" for submission history
-   - View detailed results for each submission
-
-### For Administrators
-
-1. **Access Admin Panel**
-   - Login as staff user
-   - Navigate to "Admin Panel" in the user menu
-
-2. **Manage Problems**
-   - Add new problems with descriptions and test cases
-   - Edit existing problems
-   - Manage test cases (sample and hidden)
-
-3. **Monitor System**
-   - View all submissions
-   - Monitor user activity
-   - Manage user accounts through Django admin
-
-## Sample Problems Included
-
-The system comes with 6 sample problems:
-
-1. **Hello World** (Easy) - Basic output
-2. **Sum of Two Numbers** (Easy) - Basic arithmetic
-3. **Maximum of Array** (Easy) - Array processing
-4. **Reverse String** (Easy) - String manipulation
-5. **Factorial** (Medium) - Mathematical computation
-6. **Bubble Sort** (Medium) - Sorting algorithm
-
-## Code Evaluation System
-
-### Supported Languages
-- C (GCC compiler)
-- C++ (G++ compiler with C++17 standard)
-
-### Evaluation Process
-1. **Compilation**: Code is compiled with appropriate compiler
-2. **Execution**: Compiled program runs against test cases
-3. **Verdict Assignment**: Based on execution results
-4. **Resource Monitoring**: Time and memory usage tracking
-
-### Possible Verdicts
-- **AC (Accepted)**: Solution is correct
-- **WA (Wrong Answer)**: Output doesn't match expected
-- **CE (Compilation Error)**: Code failed to compile
-- **RE (Runtime Error)**: Program crashed during execution
-- **TLE (Time Limit Exceeded)**: Execution took too long
-- **MLE (Memory Limit Exceeded)**: Used too much memory
-- **PE (Presentation Error)**: Output format issues
-
-
-
-## Security Considerations
-
-### Code Execution Safety
-- Sandboxed execution environment
-- Time and memory limits enforced
-- Temporary file cleanup
-- Input validation and sanitization
-
-### User Security
 - CSRF protection enabled
 - SQL injection prevention
 - XSS protection
-- Secure password hashing
+- Input validation and sanitization
+- Sandboxed code execution
+- File size limitations
+- Time and memory constraints
 
-## Contributing
+## 🎨 Frontend Technologies
+
+- **Tailwind CSS + DaisyUI** - Modern UI framework
+- **Font Awesome** - Icons
+- **JavaScript** - Real-time features
+- **AJAX** - Asynchronous operations
+
+## 📈 Performance Optimizations
+
+- Database indexing on frequently queried fields
+- Pagination for large datasets
+- Efficient submission queue processing
+- Optimized compiler flags
+- Static file compression
+
+## 🐛 Troubleshooting
+
+### Common Issues
+1. **Compilation Errors**: Ensure GCC/G++ are installed
+2. **Database Errors**: Check database credentials
+3. **Static Files**: Run `collectstatic` command
+4. **Permissions**: Check file/directory permissions
+
+### Logs
+- Django logs: Check console output
+- PythonAnywhere: Web app error logs
+- Database: MySQL slow query log
+
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -223,42 +151,19 @@ The system comes with 6 sample problems:
 4. Add tests if applicable
 5. Submit a pull request
 
-## Troubleshooting
-
-### Local Development Issues
-
-**Compilation Errors**
-- Ensure GCC/G++ is installed and in PATH
-- Check compiler version compatibility
-
-**Database Issues**
-- Run `python manage.py migrate`
-- Check SQLite file permissions
-
-**Static Files Not Loading**
-- Run `python manage.py collectstatic`
-- Check STATIC_ROOT configuration
-
-
-
-## License
+## 📄 License
 
 This project is open source and available under the MIT License.
 
-## Support
+## 🙏 Acknowledgments
 
-For issues and questions:
-1. Check the troubleshooting section
-2. Search existing GitHub issues
-3. Create a new issue with detailed description
-
-## Acknowledgments
-
-- Django framework for the backend
-- Tailwind CSS and DaisyUI for styling
-- Font Awesome for icons
-- SQLite for the database
+- Django framework
+- Tailwind CSS and DaisyUI
+- PythonAnywhere hosting
+- Font Awesome icons
 
 ---
 
 **Happy Coding! 🚀**
+
+For support, visit: [All About Semicolons](https://allaboutsemicolons.site)

@@ -114,22 +114,45 @@
             {% endif %}
 
             <!-- Error Details -->
-            {% if submission.verdict != 'AC' and submission.compilation_error or submission.runtime_error %}
+            {% if submission.verdict != 'AC' %}
             <div class="bg-white rounded-lg sm:rounded-xl shadow-lg border border-red-200 p-4 sm:p-6">
                 <div class="flex items-center gap-3 mb-6">
                     <div class="flex-shrink-0 w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-times text-red-600 text-sm"></i>
+                        {% if submission.verdict == 'TLE' %}
+                            <i class="fas fa-clock text-red-600 text-sm"></i>
+                        {% elif submission.verdict == 'MLE' %}
+                            <i class="fas fa-memory text-red-600 text-sm"></i>
+                        {% elif submission.verdict == 'WA' %}
+                            <i class="fas fa-times-circle text-red-600 text-sm"></i>
+                        {% elif submission.verdict == 'PE' %}
+                            <i class="fas fa-align-left text-red-600 text-sm"></i>
+                        {% else %}
+                            <i class="fas fa-times text-red-600 text-sm"></i>
+                        {% endif %}
                     </div>
                     <div>
                         <h2 class="text-lg sm:text-xl font-bold text-red-700">
-                            {% if submission.compilation_error %}Compilation Error{% else %}Runtime Error{% endif %}
+                            {% if submission.verdict == 'CE' %}Compilation Error
+                            {% elif submission.verdict == 'RE' %}Runtime Error
+                            {% elif submission.verdict == 'TLE' %}Time Limit Exceeded
+                            {% elif submission.verdict == 'MLE' %}Memory Limit Exceeded
+                            {% elif submission.verdict == 'WA' %}Wrong Answer
+                            {% elif submission.verdict == 'PE' %}Presentation Error
+                            {% else %}{{ submission.get_verdict_display }}{% endif %}
                         </h2>
                         <p class="text-sm text-red-600 mt-1">
-                            {% if submission.compilation_error %}Your code failed to compile. Please fix the syntax errors below.{% else %}Your code encountered an error during execution.{% endif %}
+                            {% if submission.verdict == 'CE' %}Your code failed to compile. Please fix the syntax errors below.
+                            {% elif submission.verdict == 'RE' %}Your code encountered an error during execution.
+                            {% elif submission.verdict == 'TLE' %}Your code took too long to execute (limit: {{ submission.problem.time_limit }}s).
+                            {% elif submission.verdict == 'MLE' %}Your code used too much memory (limit: {{ submission.problem.memory_limit }}MB).
+                            {% elif submission.verdict == 'WA' %}Your code produced incorrect output for one or more test cases.
+                            {% elif submission.verdict == 'PE' %}Your output format doesn't match expected (whitespace/formatting issue).
+                            {% else %}Your submission encountered an issue.{% endif %}
                         </p>
                     </div>
                 </div>
                 
+                {% if submission.compilation_error or submission.runtime_error %}
                 <div class="bg-gray-900 rounded-lg p-6 border border-gray-700">
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center gap-2">
@@ -137,7 +160,7 @@
                             <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
                             <div class="w-3 h-3 bg-green-500 rounded-full"></div>
                             <span class="text-gray-400 text-sm ml-3 font-mono">
-                                {% if submission.compilation_error %}compiler output{% else %}runtime error{% endif %}
+                                {% if submission.compilation_error %}compiler output{% else %}error details{% endif %}
                             </span>
                         </div>
                         <button onclick="copyError()" class="text-gray-400 hover:text-white transition-colors text-sm">
@@ -148,6 +171,7 @@
                         <pre id="error-output" class="text-red-400 font-mono text-sm leading-relaxed whitespace-pre-wrap break-words">{% if submission.compilation_error %}{{ submission.compilation_error }}{% else %}{{ submission.runtime_error }}{% endif %}</pre>
                     </div>
                 </div>
+                {% endif %}
                 
                 <!-- Error Help Section -->
                 <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -158,14 +182,30 @@
                         <div>
                             <h3 class="font-semibold text-blue-900 text-sm mb-2">Debugging Tips</h3>
                             <ul class="text-blue-800 text-sm space-y-1">
-                                {% if submission.compilation_error %}
+                                {% if submission.verdict == 'CE' %}
                                 <li>• Check for missing semicolons, brackets, or parentheses</li>
                                 <li>• Verify variable declarations and function signatures</li>
                                 <li>• Ensure all included headers are correct</li>
-                                {% else %}
+                                {% elif submission.verdict == 'RE' %}
                                 <li>• Check array bounds and pointer access</li>
-                                <li>• Verify input/output format matches expected</li>
                                 <li>• Look for division by zero or null pointer access</li>
+                                <li>• Verify input reading matches expected format</li>
+                                {% elif submission.verdict == 'TLE' %}
+                                <li>• Optimize your algorithm - reduce time complexity</li>
+                                <li>• Avoid infinite loops or excessive recursion</li>
+                                <li>• Use faster I/O methods if needed</li>
+                                {% elif submission.verdict == 'MLE' %}
+                                <li>• Reduce memory usage - use smaller data structures</li>
+                                <li>• Avoid creating large arrays unnecessarily</li>
+                                <li>• Check for memory leaks in dynamic allocation</li>
+                                {% elif submission.verdict == 'WA' %}
+                                <li>• Double-check your logic and algorithm</li>
+                                <li>• Test with the provided sample cases</li>
+                                <li>• Consider edge cases and boundary conditions</li>
+                                {% elif submission.verdict == 'PE' %}
+                                <li>• Check output format - spaces, newlines, trailing whitespace</li>
+                                <li>• Ensure exact match with expected output format</li>
+                                <li>• Remove any extra debug prints or formatting</li>
                                 {% endif %}
                             </ul>
                         </div>

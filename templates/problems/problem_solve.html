@@ -122,51 +122,7 @@
                 <div class="mb-4 sm:mb-6">
                     <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-2 sm:mb-3" style="color: black !important;">Examples</h3>
                     
-                    <!-- Example 0: From sample_input/sample_output fields -->
-                    {% if problem.sample_input and problem.sample_output %}
-                    <div class="border border-gray-200 rounded-lg overflow-hidden mb-4">
-                        <!-- Mobile: Stacked Layout -->
-                        <div class="block sm:hidden">
-                            <div class="bg-gray-100 px-3 py-2 border-b border-gray-200">
-                                <div class="text-xs font-medium text-gray-700">Input</div>
-                            </div>
-                            <div class="px-3 py-2 border-b border-gray-200 relative" style="background: white !important;">
-                                <button class="copy-btn absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-1 rounded" onclick="copyToClipboard(this, `{{ problem.sample_input|safe|escapejs }}`)" title="Copy input">
-                                    <i class="fas fa-copy text-xs"></i>
-                                </button>
-                                <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono pr-8" style="color: #374151 !important;">{{ problem.sample_input|safe }}</pre>
-                            </div>
-                            <div class="bg-gray-100 px-3 py-2 border-b border-gray-200">
-                                <div class="text-xs font-medium text-gray-700">Output</div>
-                            </div>
-                            <div class="px-3 py-2" style="background: white !important;">
-                                <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono" style="color: #374151 !important;">{{ problem.sample_output|striptags }}</pre>
-                            </div>
-                        </div>
-                        <!-- Desktop: Table Layout -->
-                        <table class="w-full hidden sm:table" style="background: white !important;">
-                            <thead class="bg-gray-100">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-r border-gray-200 w-1/2">Input</th>
-                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 w-1/2">Output</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="border-t border-gray-200">
-                                    <td class="px-4 py-3 border-r border-gray-200 w-1/2 align-top relative" style="background: white !important;">
-                                        <button class="copy-btn absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-1 rounded" onclick="copyToClipboard(this, `{{ problem.sample_input|safe|escapejs }}`)" title="Copy input">
-                                            <i class="fas fa-copy text-xs"></i>
-                                        </button>
-                                        <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono pr-8" style="color: #374151 !important;">{{ problem.sample_input|safe }}</pre>
-                                    </td>
-                                    <td class="px-4 py-3 w-1/2 align-top" style="background: white !important;">
-                                        <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono" style="color: #374151 !important;">{{ problem.sample_output|striptags }}</pre>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    {% endif %}
+     
                     
                     <!-- Examples 1, 2, 3... from database test cases -->
                     {% for test_case in problem.test_cases.all %}
@@ -175,39 +131,57 @@
                         <!-- Mobile: Stacked Layout -->
                         <div class="block sm:hidden">
                             <div class="bg-gray-100 px-3 py-2 border-b border-gray-200">
-                                <div class="text-xs font-medium text-gray-700">Input</div>
+                                <div class="flex items-center justify-between">
+                                    <div class="text-xs font-medium text-gray-700">Input</div>
+                                    <button onclick="copyToClipboard(this, `{{ test_case.input_data|default:'(no input)'|escapejs }}`)" class="text-gray-400 hover:text-gray-600 p-1" title="Copy input">
+                                        <i class="fas fa-copy text-xs"></i>
+                                    </button>
+                                </div>
                             </div>
-                            <div class="px-3 py-2 border-b border-gray-200 relative" style="background: white !important;">
-                                <button class="copy-btn absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-1 rounded" onclick="copyToClipboard(this, `{{ test_case.input_data|default:'(no input)'|escapejs }}`)" title="Copy input">
-                                    <i class="fas fa-copy text-xs"></i>
-                                </button>
-                                <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono pr-8" style="color: #374151 !important;">{{ test_case.input_data|default:"(no input)" }}</pre>
-            </div>
+                            <div class="px-3 py-2 border-b border-gray-200" style="background: white !important;">
+                                <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono" style="color: #374151 !important;">{{ test_case.input_data|default:"(no input)" }}</pre>
+                            </div>
                             <div class="bg-gray-100 px-3 py-2 border-b border-gray-200">
-                                <div class="text-xs font-medium text-gray-700">Output</div>
+                                <div class="flex items-center justify-between">
+                                    <div class="text-xs font-medium text-gray-700">Output</div>
+                                    <button onclick="copyToClipboard(this, `{{ test_case.expected_output|escapejs }}`)" class="text-gray-400 hover:text-gray-600 p-1" title="Copy output">
+                                        <i class="fas fa-copy text-xs"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="px-3 py-2" style="background: white !important;">
-                                <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono" style="color: #374151 !important;">{{ test_case.expected_output|striptags }}</pre>
+                                <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono" style="color: #374151 !important;">{{ test_case.expected_output }}</pre>
                             </div>
                         </div>
                         <!-- Desktop: Table Layout -->
                         <table class="w-full hidden sm:table" style="background: white !important;">
                             <thead class="bg-gray-100">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-r border-gray-200 w-1/2">Input</th>
-                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 w-1/2">Output</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-r border-gray-200 w-1/2">
+                                        <div class="flex items-center justify-between">
+                                            <span>Input</span>
+                                            <button onclick="copyToClipboard(this, `{{ test_case.input_data|default:'(no input)'|escapejs }}`)" class="text-gray-400 hover:text-gray-600 p-1" title="Copy input">
+                                                <i class="fas fa-copy text-xs"></i>
+                                            </button>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 w-1/2">
+                                        <div class="flex items-center justify-between">
+                                            <span>Output</span>
+                                            <button onclick="copyToClipboard(this, `{{ test_case.expected_output|escapejs }}`)" class="text-gray-400 hover:text-gray-600 p-1" title="Copy output">
+                                                <i class="fas fa-copy text-xs"></i>
+                                            </button>
+                                        </div>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr class="border-t border-gray-200">
-                                    <td class="px-4 py-3 border-r border-gray-200 w-1/2 align-top relative" style="background: white !important;">
-                                        <button class="copy-btn absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-1 rounded" onclick="copyToClipboard(this, `{{ test_case.input_data|default:'(no input)'|escapejs }}`)" title="Copy input">
-                                            <i class="fas fa-copy text-xs"></i>
-                                        </button>
-                                        <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono pr-8" style="color: #374151 !important;">{{ test_case.input_data|default:"(no input)" }}</pre>
+                                    <td class="px-4 py-3 border-r border-gray-200 w-1/2 align-top" style="background: white !important;">
+                                        <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono" style="color: #374151 !important;">{{ test_case.input_data|default:"(no input)" }}</pre>
                                     </td>
                                     <td class="px-4 py-3 w-1/2 align-top" style="background: white !important;">
-                                        <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono" style="color: #374151 !important;">{{ test_case.expected_output|striptags }}</pre>
+                                        <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono" style="color: #374151 !important;">{{ test_case.expected_output }}</pre>
                                     </td>
                                 </tr>
                             </tbody>

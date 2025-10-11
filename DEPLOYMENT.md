@@ -1,112 +1,111 @@
 # PythonAnywhere Deployment Guide
 
-## 🚀 System is Ready for Deployment!
+## Prerequisites
+- PythonAnywhere account (Hacker plan or higher for MySQL)
+- Git repository with your code
 
-### Pre-deployment Checklist ✅
-- [x] MySQL Database configured
-- [x] PythonAnywhere domain setup (aasoj.pythonanywhere.com)
-- [x] Static files configuration
-- [x] Email backend setup
-- [x] Manual queue system enabled
-- [x] Contest system implemented
-- [x] Notification system active
-- [x] Problem and contest data ready
+## Step 1: Upload Code
+1. Open a Bash console on PythonAnywhere
+2. Clone your repository:
+   ```bash
+   git clone https://github.com/yourusername/Online_Judge.git
+   cd Online_Judge
+   ```
 
-## 📋 Deployment Steps
-
-### 1. Upload Files to PythonAnywhere
+## Step 2: Create Virtual Environment
 ```bash
-# Upload entire Online_Judge folder to PythonAnywhere
-# Via Files tab or Git clone
+mkvirtualenv --python=/usr/bin/python3.10 onlinejudge
+pip install -r requirements.txt
 ```
 
-### 2. Install Dependencies
+## Step 3: Database Setup
+1. Go to PythonAnywhere Dashboard > Databases
+2. Create a MySQL database (e.g., `yourusername$default`)
+3. Note down the database details
+
+## Step 4: Environment Variables
+Create `.env` file in project root:
 ```bash
-pip3.10 install --user -r requirements.txt
+SECRET_KEY=your-very-long-secret-key-here
+DEBUG=False
+DB_NAME=yourusername$default
+DB_USER=yourusername
+DB_PASSWORD=your-database-password
+DB_HOST=yourusername.mysql.pythonanywhere-services.com
+PYTHONANYWHERE_DOMAIN=yourusername.pythonanywhere.com
 ```
 
-### 3. Database Setup
+## Step 5: Django Setup
 ```bash
-python3.10 manage.py migrate
+python manage.py collectstatic --noinput
+python manage.py migrate
+python manage.py createsuperuser
 ```
 
-### 4. Create Admin User
+## Step 6: Web App Configuration
+1. Go to PythonAnywhere Dashboard > Web
+2. Create new web app (Manual configuration, Python 3.10)
+3. Set source code: `/home/yourusername/Online_Judge`
+4. Set working directory: `/home/yourusername/Online_Judge`
+5. Edit WSGI file:
+   ```python
+   import os
+   import sys
+   
+   path = '/home/yourusername/Online_Judge'
+   if path not in sys.path:
+       sys.path.insert(0, path)
+   
+   os.environ['DJANGO_SETTINGS_MODULE'] = 'Online_Judge.settings'
+   
+   from django.core.wsgi import get_wsgi_application
+   application = get_wsgi_application()
+   ```
+
+## Step 7: Static Files
+1. In Web tab, set static files:
+   - URL: `/static/`
+   - Directory: `/home/yourusername/Online_Judge/staticfiles/`
+
+## Step 8: Install Compilers (if needed)
+For C/C++ support, compilers should already be available on PythonAnywhere.
+Test with:
 ```bash
-python3.10 manage.py create_admin
-# Admin credentials: ojadmin / OJAdmin2024!
+gcc --version
+g++ --version
 ```
 
-### 5. Create Sample Data
+## Step 9: Create Sample Data (Optional)
 ```bash
-python3.10 create_problems_and_contest.py
+python manage.py shell
 ```
+Then create some sample problems and test cases.
 
-### 6. Collect Static Files
-```bash
-python3.10 manage.py collectstatic --noinput
-```
+## Step 10: Test
+1. Reload your web app
+2. Visit your site: `https://yourusername.pythonanywhere.com`
+3. Test registration, login, and problem submission
 
-### 7. Configure Web App
-- Source code: `/home/semicolons/Online_Judge`
-- Working directory: `/home/semicolons/Online_Judge`
-- WSGI file: `/home/semicolons/Online_Judge/Online_Judge/wsgi.py`
+## Troubleshooting
 
-## 🎯 System Features
+### Common Issues:
+1. **Import errors**: Check virtual environment activation
+2. **Database errors**: Verify database credentials in `.env`
+3. **Static files not loading**: Run `collectstatic` and check static files mapping
+4. **Compilation errors**: Ensure GCC/G++ are available
 
-### Regular Problems
-- **Instant Evaluation**: Submit → Immediate results
-- **Public Access**: Available in problems list
-- **Real-time Feedback**: Notifications within seconds
+### Logs:
+- Error logs: PythonAnywhere Dashboard > Web > Log files
+- Server logs: `/var/log/yourusername.pythonanywhere.com.server.log`
 
-### Contest Problems  
-- **Queue System**: Submit → QUEUED → Manual processing
-- **Contest Only**: Hidden from public problem list
-- **Manual Control**: Staff processes via web interface
+### Performance Tips:
+1. Use database indexing (already implemented)
+2. Enable manual queue processing for contests
+3. Limit code size (50KB implemented)
+4. Set appropriate time limits (2s implemented)
 
-### Queue Management
-- **Web Interface**: `/submissions/process-queue/`
-- **Management Command**: `python3.10 manage.py process_queue`
-- **Auto Notifications**: Users get notified when judged
-
-## 🔧 Post-Deployment
-
-### Test Regular Problems
-1. Visit: `https://aasoj.pythonanywhere.com/problems/`
-2. Solve any problem → Should get instant results
-
-### Test Contest System
-1. Visit: `https://aasoj.pythonanywhere.com/contests/`
-2. Join "Programming Fundamentals Contest"
-3. Submit solution → Should be QUEUED
-
-### Process Contest Queue
-1. Login as admin: `ojadmin / OJAdmin2024!`
-2. Visit: `https://aasoj.pythonanywhere.com/submissions/process-queue/`
-3. Click "Process Queue" → Submissions get judged
-
-## 📊 Sample Data Included
-
-### Problems (20 total)
-- **Arrays & Strings**: 5 problems
-- **Mathematics**: 5 problems  
-- **Algorithms**: 5 problems
-- **Data Structures**: 5 problems
-
-### Contest
-- **Name**: Programming Fundamentals Contest
-- **Problems**: 5 selected problems
-- **Duration**: 3 hours
-- **Status**: Active and ready
-
-## 🎉 Ready to Deploy!
-
-All configurations are complete. The system will work perfectly on PythonAnywhere with:
-- Instant evaluation for practice problems
-- Queue system for contest problems
-- Real-time notifications
-- Complete admin interface
-- Sample data for testing
-
-**Domain**: https://aasoj.pythonanywhere.com
-**Admin**: ojadmin / OJAdmin2024!
-**Student**: student / student123
+## Security Notes:
+- Never commit `.env` file
+- Use strong SECRET_KEY
+- Keep DEBUG=False in production
+- Regularly update dependencies

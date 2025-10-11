@@ -74,7 +74,7 @@ def problem_solve(request, slug):
         messages.error(request, 'Invalid problem identifier.')
         return redirect('problems:problem_list')
     
-    problem = get_object_or_404(Problem, slug=slug, is_active=True)
+    problem = get_object_or_404(Problem.objects.prefetch_related('test_cases'), slug=slug, is_active=True)
     
     # Get user's latest submission for this problem
     latest_submission = None

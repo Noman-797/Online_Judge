@@ -79,30 +79,32 @@ WSGI_APPLICATION = 'Online_Judge.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Deployment checks
-if any(host in os.environ.get('HTTP_HOST', '') for host in ['.pythonanywhere.com']) or 'PYTHONANYWHERE_DOMAIN' in os.environ:
-    # PythonAnywhere deployment with MySQL
+# Database configuration
+if 'PYTHONANYWHERE_DOMAIN' in os.environ or '.pythonanywhere.com' in os.environ.get('HTTP_HOST', ''):
+    # PythonAnywhere deployment
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'semicolons$default',
-            'USER': 'semicolons',
-            'PASSWORD': 'Noman@797',
-            'HOST': 'aasoj.mysql.pythonanywhere-services.com',
+            'NAME': config('DB_NAME', default='semicolons$default'),
+            'USER': config('DB_USER', default='semicolons'),
+            'PASSWORD': config('DB_PASSWORD', default='Noman@797'),
+            'HOST': config('DB_HOST', default='semicolons.mysql.pythonanywhere-services.com'),
             'OPTIONS': {
                 'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             },
         }
     }
     ALLOWED_HOSTS = ['*']
-    DEBUG = True
-    SECURE_SSL_REDIRECT = False
-    SECURE_HSTS_SECONDS = 0
+    DEBUG = config('DEBUG', default=False, cast=bool)
 else:
+    # Local development
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
+            'OPTIONS': {
+                'timeout': 20,
+            },
         }
     }
 
@@ -160,12 +162,13 @@ LOGOUT_REDIRECT_URL = '/'
 JUDGE_TEMP_DIR = BASE_DIR / 'temp'
 JUDGE_TIME_LIMIT = 2  # seconds
 JUDGE_MEMORY_LIMIT = 128  # MB
-ENABLE_MANUAL_QUEUE = True  # Enable manual queue for contest problems
-ENABLE_MANUAL_QUEUE = True  # Enable manual queue for contest problems
-ENABLE_MANUAL_QUEUE = True  # Enable manual queue for contest problems
 
-# Manual queue processing - ENABLED for contests
+# Manual queue processing
 ENABLE_MANUAL_QUEUE = True
+
+# Compilation settings
+JUDGE_COMPILATION_TIMEOUT = 10  # seconds
+JUDGE_EXECUTION_TIMEOUT = 3  # seconds per test case
 
 # Security settings for production
 if not DEBUG and 'PYTHONANYWHERE_DOMAIN' not in os.environ:
@@ -176,15 +179,16 @@ if not DEBUG and 'PYTHONANYWHERE_DOMAIN' not in os.environ:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 
+# Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.pythonanywhere.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'semicolons@pythonanywhere.com'  # tomer PythonAnywhere email
-EMAIL_HOST_PASSWORD = 'Noman@797@DIU'             # tomer password
+EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
-# Disable OTP verification for production
+# Skip email verification
 SKIP_EMAIL_VERIFICATION = True
 
 
