@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat with Admin{% endblock %}
+
+{% block content %}
+<div class="p-4 max-w-lg mx-auto">
+    <div class="flex items-center mb-4">
+        <a href="{% url 'communications:chat_list' %}" class="btn btn-outline btn-sm mr-3">←</a>
+        <h1 class="text-lg font-bold">Chat with Admin</h1>
+    </div>
+
+    <div class="bg-white rounded-lg shadow border p-4">
+        <!-- Search Form -->
+        <div class="mb-4">
+            <label class="text-sm font-medium mb-2 block">Search Admins</label>
+            <input type="text" id="user-search" placeholder="Type admin username..." 
+                   class="input input-bordered w-full" autocomplete="off">
+            <div id="search-results" class="mt-2 space-y-1 hidden"></div>
+        </div>
+
+        <!-- Manual Form -->
+        <div class="border-t pt-4">
+            <form method="post">
+                {% csrf_token %}
+                <label class="text-sm font-medium mb-2 block">Or enter admin username</label>
+                <div class="flex space-x-2">
+                    <input type="text" name="username" placeholder="Admin username" 
+                           class="flex-1 input input-bordered" required>
+                    <button type="submit" class="btn btn-primary">Start Chat</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let searchTimeout;
+const searchInput = document.getElementById('user-search');
+const searchResults = document.getElementById('search-results');
+
+searchInput.addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    const query = this.value.trim();
+    
+    if (query.length < 2) {
+        searchResults.classList.add('hidden');
+        return;
+    }
+    
+    searchTimeout = setTimeout(() => {
+        fetch(`/communications/search-users/?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                searchResults.innerHTML = '';
+                
+                if (data.users.length > 0) {
+                    data.users.forEach(user => {
+                        const div = document.createElement('div');
+                        div.className = 'p-2 hover:bg-gray-100 cursor-pointer rounded border';
+                        div.innerHTML = `
+                            <div class="flex items-center space-x-2">
+                                <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                    ${user.username.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <div class="font-medium">${user.username}</div>
+                                    <span class="text-xs text-green-600">Admin</span>
+                                </div>
+                            </div>
+                        `;
+                        div.addEventListener('click', () => {
+                            document.querySelector('input[name="username"]').value = user.username;
+                            searchResults.classList.add('hidden');
+                            searchInput.value = '';
+                        });
+                        searchResults.appendChild(div);
+                    });
+                    searchResults.classList.remove('hidden');
+                } else {
+                    searchResults.innerHTML = '<div class="p-2 text-gray-500 text-sm">No admins found</div>';
+                    searchResults.classList.remove('hidden');
+                }
+            })
+            .catch(error => {
+                console.error('Search error:', error);
+            });
+    }, 300);
+});
+
+document.addEventListener('click', function(e) {
+    if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+        searchResults.classList.add('hidden');
+    }
+});
+</script>
+{% endblock %}

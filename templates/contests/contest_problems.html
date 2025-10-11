@@ -25,9 +25,15 @@
                 </div>
             </div>
             <div class="flex gap-2">
-                <a href="{% url 'contests:contest_list' %}" class="flex-1 btn btn-outline btn-sm text-center">
-                    <i class="fas fa-arrow-left mr-1"></i>Back
-                </a>
+                {% if is_admin %}
+                    <a href="{% url 'contests:admin_contests' %}" class="flex-1 btn btn-outline btn-sm text-center">
+                        <i class="fas fa-arrow-left mr-1"></i>Back
+                    </a>
+                {% else %}
+                    <a href="{% url 'contests:contest_list' %}" class="flex-1 btn btn-outline btn-sm text-center">
+                        <i class="fas fa-arrow-left mr-1"></i>Back
+                    </a>
+                {% endif %}
                 <a href="{% url 'contests:leaderboard' contest.slug %}" class="flex-1 btn btn-outline btn-sm text-center">
                     <i class="fas fa-trophy mr-1"></i>Board
                 </a>
@@ -52,9 +58,15 @@
                 </p>
             </div>
             <div class="flex gap-2">
-                <a href="{% url 'contests:contest_list' %}" class="btn btn-outline btn-sm">
-                    <i class="fas fa-arrow-left mr-1"></i>Back
-                </a>
+                {% if is_admin %}
+                    <a href="{% url 'contests:admin_contests' %}" class="btn btn-outline btn-sm">
+                        <i class="fas fa-arrow-left mr-1"></i>Back
+                    </a>
+                {% else %}
+                    <a href="{% url 'contests:contest_list' %}" class="btn btn-outline btn-sm">
+                        <i class="fas fa-arrow-left mr-1"></i>Back
+                    </a>
+                {% endif %}
                 <a href="{% url 'contests:leaderboard' contest.slug %}" class="btn btn-outline btn-sm">
                     <i class="fas fa-trophy mr-1"></i>Leaderboard
                 </a>
@@ -75,6 +87,10 @@
         {% endif %}
     </div>
 
+    <!-- Problems and Announcements Grid -->
+    <div class="grid grid-cols-1 xl:grid-cols-10 gap-4 sm:gap-6">
+        <!-- Problems List (70%) -->
+        <div class="xl:col-span-7">
     <!-- Problems List -->
     <div class="bg-white rounded-lg shadow-md border">
         <div class="p-3 sm:p-4 border-b bg-blue-50">
@@ -93,7 +109,8 @@
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2 mb-1">
                             <h3 class="font-medium text-gray-900">{{ forloop.counter }}. {{ cp.problem.title }}</h3>
-                            <div data-problem-id="{{ cp.problem.id }}">
+                            <span class="verdict-container" data-problem-id="{{ cp.problem.id }}" style="display: none;"></span>
+                            <div data-problem-id="{{ cp.problem.id }}" style="display: none;">
                                 {% if cp.problem.id in solved_problem_ids %}
                                     <span class="solved-badge inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                         <i class="fas fa-check text-xs mr-1"></i>Solved
@@ -141,9 +158,12 @@
                 <div class="p-3">
                     <div class="flex justify-between items-start mb-3">
                         <div class="flex-1 min-w-0">
-                            <h3 class="font-medium text-gray-900 text-sm mb-2">{{ forloop.counter }}. {{ cp.problem.title }}</h3>
+                            <div class="flex items-center gap-2 mb-2">
+                                <h3 class="font-medium text-gray-900 text-sm">{{ forloop.counter }}. {{ cp.problem.title }}</h3>
+                                <span class="verdict-container" data-problem-id="{{ cp.problem.id }}" style="display: none;"></span>
+                            </div>
                             <div class="flex flex-wrap gap-2 text-xs">
-                                <div data-problem-id="{{ cp.problem.id }}">
+                                <div data-problem-id="{{ cp.problem.id }}" style="display: none;">
                                     {% if cp.problem.id in solved_problem_ids %}
                                         <span class="solved-badge inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-800">
                                             <i class="fas fa-check text-xs mr-1"></i>Solved
@@ -188,6 +208,23 @@
                 <p class="text-sm sm:text-base text-gray-500">No problems added to this contest yet</p>
             </div>
         {% endif %}
+    </div>
+        </div>
+        
+        <!-- Announcements (30%) -->
+        <div class="xl:col-span-3">
+            <div id="announcements-section" class="bg-white rounded-lg shadow-md border">
+                <div class="p-3 sm:p-4 border-b bg-yellow-50">
+                    <h2 class="text-base font-semibold text-yellow-800 flex items-center gap-2">
+                        <i class="fas fa-bullhorn"></i>
+                        <span>Announcements</span>
+                    </h2>
+                </div>
+                <div id="announcements-list" class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                    <!-- Announcements will be loaded here -->
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -300,6 +337,85 @@ window.addEventListener('pageshow', function(event) {
     }
 });
 
+// Update verdicts
+function updateVerdicts() {
+    fetch('/submissions/api/problem-verdicts/')
+        .then(response => response.json())
+        .then(data => {
+            document.querySelectorAll('.verdict-container').forEach(container => {
+                const problemId = container.dataset.problemId;
+                const verdict = data[problemId];
+                
+                if (verdict) {
+                    if (verdict === 'AC') {
+                        container.innerHTML = '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200"><i class="fas fa-check text-xs mr-1"></i>Accepted</span>';
+                    } else {
+                        container.innerHTML = '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200"><i class="fas fa-times text-xs mr-1"></i>Wrong</span>';
+                    }
+                    container.style.display = 'inline-flex';
+                } else {
+                    container.style.display = 'none';
+                }
+            });
+        })
+        .catch(error => console.log('Verdict update failed'));
+}
+
+// Start verdict updates if user is authenticated
+{% if user.is_authenticated %}
+    updateVerdicts();
+    setInterval(updateVerdicts, 3000);
+{% endif %}
+
+// Load announcements
+let currentAnnouncementCount = 0;
+
+
+
+function loadAnnouncements() {
+    fetch('{% url "contests:get_announcements" contest.slug %}')
+        .then(response => response.json())
+        .then(data => {
+            const announcementsSection = document.getElementById('announcements-section');
+            const announcementsList = document.getElementById('announcements-list');
+            
+            if (data.announcements && data.announcements.length > 0) {
+                // Update announcement count
+                currentAnnouncementCount = data.announcements.length;
+                
+                announcementsList.innerHTML = '';
+                data.announcements.forEach(announcement => {
+                    const div = document.createElement('div');
+                    div.className = 'p-3 sm:p-4';
+                    div.innerHTML = `
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-semibold text-gray-900">${announcement.title}</h4>
+                            <span class="text-xs text-gray-500">${announcement.created_at}</span>
+                        </div>
+                        <p class="text-sm text-gray-700">${announcement.message.replace(/\n/g, '<br>')}</p>
+                    `;
+                    announcementsList.appendChild(div);
+                });
+            } else {
+                currentAnnouncementCount = 0;
+                announcementsList.innerHTML = '<div class="p-4 text-center text-gray-500 text-sm">No announcements yet</div>';
+            }
+        })
+        .catch(error => console.error('Error loading announcements:', error));
+}
+
+// Load announcements on page load and every 30 seconds
+loadAnnouncements();
+// Initialize count after first load
+setTimeout(() => {
+    fetch('{% url "contests:get_announcements" contest.slug %}')
+        .then(response => response.json())
+        .then(data => {
+            currentAnnouncementCount = data.announcements ? data.announcements.length : 0;
+        });
+}, 1000);
+setInterval(loadAnnouncements, 5000);
+
 // Only update solved status on AC - no other notifications
 window.addEventListener('storage', function(e) {
     if (e.key === 'submissionResult' && e.newValue) {
@@ -309,5 +425,8 @@ window.addEventListener('storage', function(e) {
         }
     }
 });
+
+
+
 </script>
 {% endblock %}

@@ -1,0 +1,23 @@
+<div class="card bg-base-100 shadow-lg mb-4">
+    <div class="card-body">
+        <div class="flex items-start gap-4">
+            <div class="avatar placeholder">
+                <div class="bg-neutral text-neutral-content rounded-full w-10">
+                    <span class="text-sm">{{ reply.user.username|first|upper }}</span>
+                </div>
+            </div>
+            <div class="flex-1">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="font-semibold">{{ reply.user.username }}</span>
+                    {% if reply.user.is_staff %}
+                        <span class="badge badge-primary badge-sm">Staff</span>
+                    {% endif %}
+                    <span class="text-sm text-gray-500">{{ reply.created_at|timesince }} ago</span>
+                </div>
+                <div class="prose max-w-none">
+                    {{ reply.message|linebreaks }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

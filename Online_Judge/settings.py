@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'submissions',
     'judge',
     'contests',
+    'communications',
 ]
 
 MIDDLEWARE = [

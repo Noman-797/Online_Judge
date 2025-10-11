@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ problem.title }} - Discussions{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ problem.title }} - Discussions</h1>
+        <div class="flex items-center gap-4">
+            <a href="{% url 'problems:problem_solve' problem.slug %}" class="btn btn-outline btn-sm">
+                <i class="fas fa-arrow-left mr-1"></i>Back to Problem
+            </a>
+            <span class="text-sm text-gray-600">{{ discussions.count }} discussion{{ discussions.count|pluralize }}</span>
+        </div>
+    </div>
+
+    <!-- New Discussion Form -->
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title">Start a New Discussion</h2>
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-control mb-4">
+                    <label class="label">
+                        <span class="label-text">Title</span>
+                    </label>
+                    {{ form.title }}
+                </div>
+                <div class="form-control mb-4">
+                    <label class="label">
+                        <span class="label-text">Message</span>
+                    </label>
+                    {{ form.message }}
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus mr-1"></i>Create Discussion
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Discussions List -->
+    <div class="space-y-4">
+        {% for discussion in discussions %}
+        <div class="card bg-base-100 shadow-lg">
+            <div class="card-body">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <h3 class="card-title text-lg">
+                            <a href="{% url 'communications:discussion_detail' discussion.id %}" class="link link-hover">
+                                {{ discussion.title }}
+                            </a>
+                            {% if discussion.is_resolved %}
+                                <span class="badge badge-success badge-sm">Resolved</span>
+                            {% endif %}
+                        </h3>
+                        <p class="text-gray-600 mt-2">{{ discussion.message|truncatewords:20 }}</p>
+                        <div class="flex items-center gap-4 mt-3 text-sm text-gray-500">
+                            <span><i class="fas fa-user mr-1"></i>{{ discussion.user.username }}</span>
+                            <span><i class="fas fa-clock mr-1"></i>{{ discussion.created_at|timesince }} ago</span>
+                            <span><i class="fas fa-comments mr-1"></i>{{ discussion.replies.count }} replies</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-8">
+            <i class="fas fa-comments text-4xl text-gray-400 mb-4"></i>
+            <p class="text-gray-600">No discussions yet. Start the first one!</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

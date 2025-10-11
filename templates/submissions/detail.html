@@ -12,16 +12,29 @@
             </h1>
             <p class="text-xs sm:text-sm text-gray-600 mt-1">Detailed submission information and source code</p>
         </div>
+        {% if request.GET.from == 'contest' and request.GET.contest and request.GET.problem %}
+        <a href="{% url 'contests:contest_problem_solve' request.GET.contest request.GET.problem %}" 
+           class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-xs sm:text-sm font-semibold rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 transition-all duration-200 shadow-sm hover:shadow-md w-full sm:w-auto justify-center">
+            <i class="fas fa-arrow-left mr-2"></i>Back to Problem
+        </a>
+        {% elif request.GET.from == 'problem' %}
+        <a href="{% url 'problems:problem_solve' submission.problem.slug %}" 
+           class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-xs sm:text-sm font-semibold rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 transition-all duration-200 shadow-sm hover:shadow-md w-full sm:w-auto justify-center">
+            <i class="fas fa-arrow-left mr-2"></i>Back to Problem
+        </a>
+        {% else %}
         <a href="{% url 'submissions:my_submissions' %}" 
            class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-xs sm:text-sm font-semibold rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 transition-all duration-200 shadow-sm hover:shadow-md w-full sm:w-auto justify-center">
             <i class="fas fa-arrow-left mr-2"></i>Back to Submissions
         </a>
+        {% endif %}
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6 lg:gap-8">
         <!-- Left Column - Submission Info -->
-        <div class="lg:col-span-2 space-y-4 sm:space-y-6">
+        <div class="lg:col-span-3 space-y-4 sm:space-y-6">
             <!-- Basic Info Card -->
+            {% if submission.verdict == 'AC' %}
             <div class="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-100 p-4 sm:p-6">
                 <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center gap-2">
                     <i class="fas fa-info-circle text-indigo-600"></i>
@@ -98,23 +111,72 @@
                 </div>
                 {% endif %}
             </div>
+            {% endif %}
 
             <!-- Error Details -->
-            {% if submission.compilation_error or submission.runtime_error %}
-            <div class="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-100 p-4 sm:p-6">
-                <h2 class="text-lg sm:text-xl font-bold text-red-700 mb-4 flex items-center gap-2">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    {% if submission.compilation_error %}Compilation Error{% else %}Runtime Error{% endif %}
-                </h2>
-                <div class="bg-red-50 border border-red-200 rounded-lg p-4 overflow-x-auto">
-                    <pre class="text-xs sm:text-sm font-mono text-red-800 whitespace-pre-wrap leading-relaxed">{% if submission.compilation_error %}{{ submission.compilation_error }}{% else %}{{ submission.runtime_error }}{% endif %}</pre>
+            {% if submission.verdict != 'AC' and submission.compilation_error or submission.runtime_error %}
+            <div class="bg-white rounded-lg sm:rounded-xl shadow-lg border border-red-200 p-4 sm:p-6">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="flex-shrink-0 w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-times text-red-600 text-sm"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-bold text-red-700">
+                            {% if submission.compilation_error %}Compilation Error{% else %}Runtime Error{% endif %}
+                        </h2>
+                        <p class="text-sm text-red-600 mt-1">
+                            {% if submission.compilation_error %}Your code failed to compile. Please fix the syntax errors below.{% else %}Your code encountered an error during execution.{% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-900 rounded-lg p-6 border border-gray-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                            <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                            <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                            <span class="text-gray-400 text-sm ml-3 font-mono">
+                                {% if submission.compilation_error %}compiler output{% else %}runtime error{% endif %}
+                            </span>
+                        </div>
+                        <button onclick="copyError()" class="text-gray-400 hover:text-white transition-colors text-sm">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <div class="bg-gray-800 rounded p-4 max-h-80 overflow-y-auto">
+                        <pre id="error-output" class="text-red-400 font-mono text-sm leading-relaxed whitespace-pre-wrap break-words">{% if submission.compilation_error %}{{ submission.compilation_error }}{% else %}{{ submission.runtime_error }}{% endif %}</pre>
+                    </div>
+                </div>
+                
+                <!-- Error Help Section -->
+                <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex items-start gap-3">
+                        <div class="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mt-0.5">
+                            <i class="fas fa-lightbulb text-blue-600 text-xs"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-blue-900 text-sm mb-2">Debugging Tips</h3>
+                            <ul class="text-blue-800 text-sm space-y-1">
+                                {% if submission.compilation_error %}
+                                <li>• Check for missing semicolons, brackets, or parentheses</li>
+                                <li>• Verify variable declarations and function signatures</li>
+                                <li>• Ensure all included headers are correct</li>
+                                {% else %}
+                                <li>• Check array bounds and pointer access</li>
+                                <li>• Verify input/output format matches expected</li>
+                                <li>• Look for division by zero or null pointer access</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
             {% endif %}
         </div>
 
         <!-- Right Column - Source Code -->
-        <div class="lg:col-span-1">
+        <div class="lg:col-span-2">
             <div class="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-100 p-4 sm:p-6 sticky top-4">
                 <div class="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-start sm:items-center lg:items-start xl:items-center justify-between mb-4 gap-3">
                     <h2 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
@@ -169,6 +231,23 @@ function copyCode() {
             btn.innerHTML = originalText;
             btn.classList.remove('bg-green-600', 'text-white');
             btn.classList.add('bg-gray-200', 'text-gray-900', 'hover:bg-gray-300');
+        }, 2000);
+    });
+}
+
+function copyError() {
+    const errorElement = document.getElementById('error-output');
+    const text = errorElement.textContent;
+    
+    navigator.clipboard.writeText(text).then(function() {
+        const btn = event.target;
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        btn.classList.add('text-green-400');
+        
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            btn.classList.remove('text-green-400');
         }, 2000);
     });
 }

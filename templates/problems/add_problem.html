@@ -3,20 +3,23 @@
 {% block title %}Add Problem - Admin - All About Semicolons{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-4 sm:py-6">
+<div class="max-w-6xl mx-auto px-4 py-4 sm:py-6">
     <div class="bg-white rounded-lg shadow-xl border">
         <div class="p-4 sm:p-6">
             <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-                <h2 class="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    <i class="fas fa-plus"></i>
-                    Add New Problem
-                </h2>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+                        <i class="fas fa-plus text-blue-600"></i>
+                        Add New Problem
+                    </h2>
+
+                </div>
                 <a href="{% url 'problems:admin_problems' %}" class="btn btn-outline btn-sm self-start sm:self-auto">
                     <i class="fas fa-arrow-left mr-1"></i>Back
                 </a>
             </div>
             
-            <form method="post">
+            <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
@@ -105,77 +108,180 @@
                     </div>
                 </div>
                 
+                <div class="form-control mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-sticky-note mr-1 text-yellow-500"></i>Sample Note (Optional)
+                    </label>
+                    <div class="relative">
+                        <input type="text" name="sample_note" class="input input-bordered w-full pl-10 pr-4 py-3 text-sm border-2 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 rounded-lg" placeholder="Add explanation for sample input/output..." value="{{ form.sample_note.value|default:'' }}">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-comment-alt text-gray-400"></i>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">Optional explanation to help users understand the sample case</div>
+                </div>
+                
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                     <div class="form-control">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Difficulty
+                            <i class="fas fa-signal mr-1 text-orange-500"></i>Difficulty
                         </label>
-                        {{ form.difficulty }}
+                        <div class="relative">
+                            <select name="difficulty" class="select select-bordered w-full pl-10 pr-4 py-3 text-sm border-2 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 rounded-lg">
+                                <option value="">Select difficulty...</option>
+                                <option value="Easy" {% if form.difficulty.value == 'Easy' %}selected{% endif %}>Easy</option>
+                                <option value="Medium" {% if form.difficulty.value == 'Medium' %}selected{% endif %}>Medium</option>
+                                <option value="Hard" {% if form.difficulty.value == 'Hard' %}selected{% endif %}>Hard</option>
+                            </select>
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-layer-group text-gray-400"></i>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="form-control">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Time Limit (s)
+                            <i class="fas fa-clock mr-1 text-blue-500"></i>Time Limit (s)
                         </label>
-                        {{ form.time_limit }}
+                        <div class="relative">
+                            <input type="number" name="time_limit" step="0.1" min="0.1" max="10" class="input input-bordered w-full pl-10 pr-4 py-3 text-sm border-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg" placeholder="2.0" value="{{ form.time_limit.value|default:'2.0' }}">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-stopwatch text-gray-400"></i>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="form-control">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Memory Limit (MB)
+                            <i class="fas fa-memory mr-1 text-red-500"></i>Memory Limit (MB)
                         </label>
-                        {{ form.memory_limit }}
+                        <div class="relative">
+                            <input type="number" name="memory_limit" min="1" max="1024" class="input input-bordered w-full pl-10 pr-4 py-3 text-sm border-2 focus:border-red-500 focus:ring-2 focus:ring-red-200 rounded-lg" placeholder="256" value="{{ form.memory_limit.value|default:'256' }}">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-microchip text-gray-400"></i>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="form-control">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Category
+                            <i class="fas fa-folder mr-1 text-green-500"></i>Category
                         </label>
-                        {{ form.category }}
+                        <div class="relative">
+                            <select name="category" class="select select-bordered w-full pl-10 pr-4 py-3 text-sm border-2 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-lg">
+                                <option value="">Select category...</option>
+                                {% for choice in form.category.field.queryset %}
+                                    <option value="{{ choice.id }}" {% if form.category.value == choice.id %}selected{% endif %}>{{ choice.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-tag text-gray-400"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
+                <!-- Contest Only Field -->
                 <div class="form-control mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-tags mr-1 text-purple-500"></i>Tags
+                    <label class="flex items-center gap-3 cursor-pointer p-4 bg-gray-50 rounded-lg border">
+                        {{ form.contest_only }}
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-trophy text-purple-500"></i>
+                            <span class="text-sm font-medium text-gray-700">Contest Only</span>
+                        </div>
+                        <span class="text-xs text-gray-500">Hide from public problem list, show only in contests</span>
                     </label>
-                    <div class="relative">
-                        <input type="text" name="tags" class="input input-bordered w-full pl-10 pr-4 py-3 text-sm border-2 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 rounded-lg" placeholder="arrays, sorting, dynamic-programming..." value="{{ form.tags.value|default:'' }}">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-hashtag text-gray-400"></i>
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <div class="flex flex-wrap gap-2">
-                            <button type="button" class="tag-btn px-3 py-1 bg-gray-100 hover:bg-purple-100 text-xs rounded-full border border-gray-300 hover:border-purple-300 transition-all" data-tag="arrays">arrays</button>
-                            <button type="button" class="tag-btn px-3 py-1 bg-gray-100 hover:bg-purple-100 text-xs rounded-full border border-gray-300 hover:border-purple-300 transition-all" data-tag="sorting">sorting</button>
-                            <button type="button" class="tag-btn px-3 py-1 bg-gray-100 hover:bg-purple-100 text-xs rounded-full border border-gray-300 hover:border-purple-300 transition-all" data-tag="dynamic-programming">dp</button>
-                            <button type="button" class="tag-btn px-3 py-1 bg-gray-100 hover:bg-purple-100 text-xs rounded-full border border-gray-300 hover:border-purple-300 transition-all" data-tag="strings">strings</button>
-                            <button type="button" class="tag-btn px-3 py-1 bg-gray-100 hover:bg-purple-100 text-xs rounded-full border border-gray-300 hover:border-purple-300 transition-all" data-tag="math">math</button>
-                            <button type="button" class="tag-btn px-3 py-1 bg-gray-100 hover:bg-purple-100 text-xs rounded-full border border-gray-300 hover:border-purple-300 transition-all" data-tag="greedy">greedy</button>
-                            <button type="button" class="tag-btn px-3 py-1 bg-gray-100 hover:bg-purple-100 text-xs rounded-full border border-gray-300 hover:border-purple-300 transition-all" data-tag="graph">graph</button>
-                            <button type="button" class="tag-btn px-3 py-1 bg-gray-100 hover:bg-purple-100 text-xs rounded-full border border-gray-300 hover:border-purple-300 transition-all" data-tag="binary-search">binary-search</button>
-                        </div>
-                    </div>
+                    {% if form.contest_only.errors %}
+                        <p class="text-red-600 text-sm mt-1">{{ form.contest_only.errors.0 }}</p>
+                    {% endif %}
                 </div>
                 
-                <div class="form-control mb-6">
-                    <label class="flex items-start gap-3 cursor-pointer">
-                        <input type="checkbox" name="contest_only" class="checkbox checkbox-primary" {% if form.contest_only.value %}checked{% endif %}>
-                        <div>
-                            <span class="text-sm font-medium text-gray-700">Contest Only (Hide from public problem list)</span>
-                            <p class="text-sm text-gray-500 mt-1">Check this to make the problem visible only in contests</p>
+                <!-- Test Cases Section -->
+                <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <i class="fas fa-vial text-green-600"></i>
+                        Test Cases
+                    </h3>
+                    
+                    <!-- File Upload Method -->
+                    <div class="mb-6">
+                        <h4 class="text-md font-medium text-gray-800 mb-3">Upload Test Cases (Recommended)</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-control">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-upload mr-1 text-blue-500"></i>Input File (.txt)
+                                </label>
+                                <input type="file" name="input_file" accept=".txt" class="file-input file-input-bordered w-full">
+                                <div class="text-xs text-gray-500 mt-1">Upload a .txt file with test inputs (one per line or separated by blank lines)</div>
+                            </div>
+                            <div class="form-control">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-upload mr-1 text-green-500"></i>Output File (.txt)
+                                </label>
+                                <input type="file" name="output_file" accept=".txt" class="file-input file-input-bordered w-full">
+                                <div class="text-xs text-gray-500 mt-1">Upload a .txt file with expected outputs (one per line or separated by blank lines)</div>
+                            </div>
                         </div>
-                    </label>
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle"></i>
+                            <div>
+                                <p class="font-semibold">File Format:</p>
+                                <p class="text-sm">Each test case should be separated by a blank line. The system will automatically match inputs with outputs.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="divider">OR</div>
+                    
+                    <!-- Manual Test Case Entry -->
+                    <div class="mb-4">
+                        <h4 class="text-md font-medium text-gray-800 mb-3">Add Test Cases Manually</h4>
+                        <div id="testCases">
+                            <div class="test-case-item bg-white rounded-lg border p-4 mb-4">
+                                <div class="flex justify-between items-center mb-3">
+                                    <h5 class="font-medium text-gray-700">Test Case 1</h5>
+                                    <button type="button" class="btn btn-sm btn-error remove-test-case" style="display: none;">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="form-control">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Input</label>
+                                        <textarea name="test_input[]" class="textarea textarea-bordered w-full" rows="3" placeholder="Enter test input..."></textarea>
+                                    </div>
+                                    <div class="form-control">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Expected Output</label>
+                                        <textarea name="test_output[]" class="textarea textarea-bordered w-full" rows="3" placeholder="Enter expected output..."></textarea>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                                    <div class="form-control">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Note (Optional)</label>
+                                        <input type="text" name="test_note[]" class="input input-bordered input-sm w-full" placeholder="Add a note for this test case...">
+                                    </div>
+                                    <div class="form-control flex justify-center">
+                                        <label class="flex items-center gap-2 cursor-pointer mt-6">
+                                            <input type="checkbox" name="is_sample[]" class="checkbox checkbox-sm">
+                                            <span class="text-sm text-gray-700">Sample Test Case</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" id="addTestCase" class="btn btn-outline btn-sm">
+                            <i class="fas fa-plus mr-1"></i>Add Another Test Case
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="form-control">
                     <div class="flex flex-col sm:flex-row gap-4">
-                        <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2 flex-1">
-                            <i class="fas fa-save"></i>
+                        <button type="submit" class="btn btn-primary flex-1">
+                            <i class="fas fa-save mr-2"></i>
                             Create Problem
                         </button>
-                        <a href="{% url 'problems:admin_problems' %}" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 flex items-center justify-center gap-2 flex-1">
+                        <a href="{% url 'problems:admin_problems' %}" class="btn btn-outline flex-1">
+                            <i class="fas fa-times mr-2"></i>
                             Cancel
                         </a>
                     </div>
@@ -224,33 +330,75 @@ function generateSlug() {
 document.querySelector('input[name="title"]').addEventListener('input', generateSlug);
 document.getElementById('generateSlug').addEventListener('click', generateSlug);
 
-// Tag functionality
-document.querySelectorAll('.tag-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const tag = this.dataset.tag;
-        const input = document.querySelector('input[name="tags"]');
-        const tags = input.value.split(',').map(t => t.trim()).filter(t => t);
-        
-        if (!tags.includes(tag)) {
-            tags.push(tag);
-            input.value = tags.join(', ');
-            this.classList.add('bg-purple-100', 'border-purple-300', 'text-purple-700');
-        }
-    });
-});
 
-// Update tag buttons based on input
-document.querySelector('input[name="tags"]').addEventListener('input', function() {
-    const tags = this.value.split(',').map(t => t.trim()).filter(t => t);
-    document.querySelectorAll('.tag-btn').forEach(btn => {
-        if (tags.includes(btn.dataset.tag)) {
-            btn.classList.add('bg-purple-100', 'border-purple-300', 'text-purple-700');
+
+// Test Case Management
+let testCaseCount = 1;
+
+function updateRemoveButtons() {
+    const testCases = document.querySelectorAll('.test-case-item');
+    testCases.forEach((item, index) => {
+        const removeBtn = item.querySelector('.remove-test-case');
+        if (testCases.length > 1) {
+            removeBtn.style.display = 'block';
         } else {
-            btn.classList.remove('bg-purple-100', 'border-purple-300', 'text-purple-700');
+            removeBtn.style.display = 'none';
         }
     });
+}
+
+document.getElementById('addTestCase').addEventListener('click', function() {
+    testCaseCount++;
+    const testCasesContainer = document.getElementById('testCases');
+    const newTestCase = document.createElement('div');
+    newTestCase.className = 'test-case-item bg-white rounded-lg border p-4 mb-4';
+    newTestCase.innerHTML = `
+        <div class="flex justify-between items-center mb-3">
+            <h5 class="font-medium text-gray-700">Test Case ${testCaseCount}</h5>
+            <button type="button" class="btn btn-sm btn-error remove-test-case">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="form-control">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Input</label>
+                <textarea name="test_input[]" class="textarea textarea-bordered w-full" rows="3" placeholder="Enter test input..."></textarea>
+            </div>
+            <div class="form-control">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Expected Output</label>
+                <textarea name="test_output[]" class="textarea textarea-bordered w-full" rows="3" placeholder="Enter expected output..."></textarea>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+            <div class="form-control">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Note (Optional)</label>
+                <input type="text" name="test_note[]" class="input input-bordered input-sm w-full" placeholder="Add a note for this test case...">
+            </div>
+            <div class="form-control flex justify-center">
+                <label class="flex items-center gap-2 cursor-pointer mt-6">
+                    <input type="checkbox" name="is_sample[]" class="checkbox checkbox-sm">
+                    <span class="text-sm text-gray-700">Sample Test Case</span>
+                </label>
+            </div>
+        </div>
+    `;
+    testCasesContainer.appendChild(newTestCase);
+    updateRemoveButtons();
 });
 
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.remove-test-case')) {
+        e.target.closest('.test-case-item').remove();
+        updateRemoveButtons();
+        // Renumber test cases
+        document.querySelectorAll('.test-case-item').forEach((item, index) => {
+            item.querySelector('h5').textContent = `Test Case ${index + 1}`;
+        });
+        testCaseCount = document.querySelectorAll('.test-case-item').length;
+    }
+});
+
+updateRemoveButtons();
 
 </script>
 {% endblock %}

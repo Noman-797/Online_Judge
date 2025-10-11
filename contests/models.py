@@ -76,3 +76,23 @@ class ContestParticipation(models.Model):
             models.Index(fields=['contest', '-total_score']),    # Leaderboard
             models.Index(fields=['user']),                       # User contests
         ]
+    
+    def save(self, *args, **kwargs):
+        # Prevent admin users from participating
+        if self.user.is_staff or self.user.is_superuser:
+            raise ValueError("Admin users cannot participate in contests")
+        super().save(*args, **kwargs)
+
+
+class ContestAnnouncement(models.Model):
+    contest = models.ForeignKey(Contest, on_delete=models.CASCADE, related_name='announcements')
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.contest.title}: {self.title}"

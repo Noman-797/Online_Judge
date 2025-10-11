@@ -12,6 +12,7 @@ urlpatterns = [
     path('admin/contests/', views.admin_contests, name='admin_contests'),
     path('admin/add/', views.add_contest, name='add_contest'),
     path('admin/<slug:slug>/problems/', views.manage_contest_problems, name='manage_problems'),
+    path('admin/<slug:slug>/problems/<int:problem_id>/edit/', views.edit_contest_problem, name='edit_contest_problem'),
     path('admin/<slug:slug>/problems/<int:problem_id>/remove/', views.remove_contest_problem, name='remove_problem'),
     path('admin/<slug:slug>/edit/', views.edit_contest, name='edit_contest'),
     path('admin/<slug:slug>/delete/', views.delete_contest, name='delete_contest'),
@@ -24,4 +25,8 @@ urlpatterns = [
     path('<slug:slug>/problem/<slug:problem_slug>/test/', views.contest_test_code, name='contest_test_code'),
     path('<slug:slug>/problem/<slug:problem_slug>/submit/', views.contest_submit_ajax, name='contest_submit_ajax'),
     path('<slug:slug>/check-solved/', views.check_solved_status, name='check_solved_status'),
+    path('<slug:slug>/discussions/api/', views.contest_discussions_api, name='contest_discussions_api'),
+    path('<slug:slug>/discussions/', views.contest_discussions, name='contest_discussions'),
+    path('admin/<slug:slug>/announcements/', views.manage_announcements, name='manage_announcements'),
+    path('<slug:slug>/announcements/api/', views.get_contest_announcements, name='get_announcements'),
 ]

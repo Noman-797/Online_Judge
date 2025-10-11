@@ -7,9 +7,14 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4 sm:mb-6">
         <h1 class="text-lg sm:text-2xl lg:text-3xl font-bold text-center sm:text-left">Monitor: {{ contest.title }}</h1>
-        <a href="{% url 'contests:admin_contests' %}" class="btn btn-outline btn-sm w-full sm:w-auto">
-            <i class="fas fa-arrow-left mr-1"></i>Back to Admin
-        </a>
+        <div class="flex gap-2">
+            <a href="{% url 'contests:manage_announcements' contest.slug %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-bullhorn mr-1"></i>Announcements
+            </a>
+            <a href="{% url 'contests:admin_contests' %}" class="btn btn-outline btn-sm">
+                <i class="fas fa-arrow-left mr-1"></i>Back to Admin
+            </a>
+        </div>
     </div>
 
     <!-- Mobile Stats -->

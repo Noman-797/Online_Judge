@@ -5,7 +5,8 @@ app_name = 'problems'
 
 urlpatterns = [
     path('', views.problem_list, name='problem_list'),
-    path('<slug:slug>/', views.problem_solve, name='problem_detail'),
+    path('<slug:slug>/', views.problem_solve, name='problem_solve'),
+    path('detail/<slug:slug>/', views.problem_detail, name='problem_detail'),
 
     path('admin/problems/', views.admin_problems, name='admin_problems'),
     path('admin/add/', views.add_problem, name='add_problem'),

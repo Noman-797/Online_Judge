@@ -15,6 +15,9 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='1' width='30' height='30' rx='2' fill='%230f172a' stroke='%2322d3ee' stroke-width='2'/%3E%3Ctext x='16' y='21' font-family='JetBrains Mono,monospace' font-size='10' font-weight='bold' text-anchor='middle' fill='%2322d3ee'%3E%26lt;/%26gt;%3C/text%3E%3Ccircle cx='26' cy='6' r='1.5' fill='%2310b981'/%3E%3C/svg%3E">
+    
     <!-- Logo CSS -->
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/logo.css' %}">
@@ -61,10 +64,32 @@
                         {% if not user.is_staff %}
                             <a href="{% url 'problems:problem_list' %}" class="text-gray-700 hover:text-indigo-600 font-medium text-sm xl:text-base">Problems</a>
                         {% endif %}
-                        <a href="{% url 'contests:contest_list' %}" class="text-gray-700 hover:text-indigo-600 font-medium text-sm xl:text-base">Contests</a>
+                        {% if not user.is_staff %}
+                            <a href="{% url 'contests:contest_list' %}" class="text-gray-700 hover:text-indigo-600 font-medium text-sm xl:text-base">Contests</a>
+                        {% endif %}
                         <a href="{% url 'submissions:my_submissions' %}" class="text-gray-700 hover:text-indigo-600 font-medium text-sm xl:text-base">Submissions</a>
+                        {% if not user.is_staff %}
+                            <div class="relative">
+                                <a href="{% url 'communications:chat_list' %}" class="text-gray-700 hover:text-indigo-600 font-medium text-sm xl:text-base flex items-center space-x-1">
+                                    <i class="fas fa-comments"></i>
+                                    <span>Support</span>
+                                </a>
+                                <span id="message-bell" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden font-bold">
+                                    <span id="bell-count">0</span>
+                                </span>
+                            </div>
+                        {% endif %}
                         {% if user.is_staff %}
                             <a href="{% url 'problems:admin_problems' %}" class="text-gray-700 hover:text-indigo-600 font-medium text-sm xl:text-base">Manage</a>
+                            <div class="relative">
+                                <a href="{% url 'communications:admin_messages' %}" class="text-gray-700 hover:text-indigo-600 font-medium text-sm xl:text-base flex items-center space-x-1">
+                                    <i class="fas fa-envelope"></i>
+                                    <span>Messages</span>
+                                </a>
+                                <span id="admin-message-bell" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden font-bold">
+                                    <span id="admin-bell-count">0</span>
+                                </span>
+                            </div>
                             <a href="{% url 'submissions:process_queue_manual' %}" class="text-orange-600 hover:text-orange-700 font-medium text-sm xl:text-base">🔄 Queue</a>
                             <a href="{% url 'admin:index' %}" class="text-gray-700 hover:text-indigo-600 font-medium text-sm xl:text-base">Admin Panel</a>
                         {% endif %}
@@ -91,10 +116,32 @@
                     {% if not user.is_staff %}
                         <a href="{% url 'problems:problem_list' %}" class="block py-3 text-gray-700 hover:text-indigo-600 font-medium">Problems</a>
                     {% endif %}
-                    <a href="{% url 'contests:contest_list' %}" class="block py-3 text-gray-700 hover:text-indigo-600 font-medium">Contests</a>
+                    {% if not user.is_staff %}
+                        <a href="{% url 'contests:contest_list' %}" class="block py-3 text-gray-700 hover:text-indigo-600 font-medium">Contests</a>
+                    {% endif %}
                     <a href="{% url 'submissions:my_submissions' %}" class="block py-3 text-gray-700 hover:text-indigo-600 font-medium">Submissions</a>
+                    {% if not user.is_staff %}
+                        <div class="relative">
+                            <a href="{% url 'communications:chat_list' %}" class="block py-3 text-gray-700 hover:text-indigo-600 font-medium flex items-center space-x-2">
+                                <i class="fas fa-comments"></i>
+                                <span>Support</span>
+                            </a>
+                            <span id="message-bell-mobile" class="absolute top-2 left-6 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center hidden font-bold">
+                                <span id="bell-count-mobile">0</span>
+                            </span>
+                        </div>
+                    {% endif %}
                     {% if user.is_staff %}
                         <a href="{% url 'problems:admin_problems' %}" class="block py-3 text-gray-700 hover:text-indigo-600 font-medium">Manage</a>
+                        <div class="relative">
+                            <a href="{% url 'communications:admin_messages' %}" class="block py-3 text-gray-700 hover:text-indigo-600 font-medium flex items-center space-x-2">
+                                <i class="fas fa-envelope"></i>
+                                <span>Messages</span>
+                            </a>
+                            <span id="admin-message-bell-mobile" class="absolute top-2 left-6 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center hidden font-bold">
+                                <span id="admin-bell-count-mobile">0</span>
+                            </span>
+                        </div>
                         <a href="{% url 'submissions:process_queue_manual' %}" class="block py-3 text-orange-600 hover:text-orange-700 font-medium">🔄 Process Queue</a>
                         <a href="{% url 'admin:index' %}" class="block py-3 text-gray-700 hover:text-indigo-600 font-medium">Admin Panel</a>
                     {% endif %}
@@ -111,11 +158,11 @@
     <!-- Main Content -->
     <main>
         <!-- Messages -->
-        {% if messages %}
+        {% if messages and request.resolver_match.url_name != 'my_messages' and request.resolver_match.url_name != 'admin_messages' and request.resolver_match.url_name != 'admin_chat_detail' and request.resolver_match.url_name == 'chat_list' %}
             <div class="mt-4 mb-3 sm:mb-4 md:mb-6 space-y-2 px-2 sm:px-4 lg:px-0 max-w-7xl mx-auto">
                 {% for message in messages %}
                     <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-error{% elif message.tags == 'warning' %}alert-warning{% else %}alert-info{% endif %} shadow-sm rounded-md sm:rounded-lg text-xs sm:text-sm md:text-base py-2 sm:py-3 px-3 sm:px-4">
-                        <div class="flex items-start sm:items-center justify-between gap-2">
+                        <div class="flex items-start sm:items-center gap-2">
                             <div class="flex items-start sm:items-center min-w-0 flex-1 gap-2">
                                 {% if message.tags == 'success' %}
                                     <i class="fas fa-check-circle text-xs sm:text-sm md:text-base flex-shrink-0 mt-0.5 sm:mt-0"></i>
@@ -128,7 +175,7 @@
                                 {% endif %}
                                 <span class="break-words leading-tight sm:leading-normal">{{ message }}</span>
                             </div>
-                            <button class="btn btn-ghost btn-xs p-1 min-h-0 h-auto flex-shrink-0" onclick="this.parentElement.parentElement.remove()">
+                            <button class="ml-auto flex-shrink-0 text-current opacity-70 hover:opacity-100 p-1" onclick="this.parentElement.parentElement.remove()">
                                 <i class="fas fa-times text-xs"></i>
                             </button>
                         </div>
@@ -337,7 +384,7 @@
             }
         }, 3000);
         
-        // Add CSS for animations
+        // Add CSS for animations and tooltip
         const globalStyle = document.createElement('style');
         globalStyle.textContent = `
             @keyframes slideUp {
@@ -353,8 +400,165 @@
             .global-notification {
                 box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
             }
+            #message-bell:hover #bell-tooltip {
+                display: block !important;
+            }
+            .arrow-up {
+                width: 0;
+                height: 0;
+                border-left: 4px solid transparent;
+                border-right: 4px solid transparent;
+                border-bottom: 4px solid #1f2937;
+                position: absolute;
+                top: -4px;
+                left: 50%;
+                transform: translateX(-50%);
+            }
         `;
         document.head.appendChild(globalStyle);
+        
+        // Check for contest announcements
+        function checkContestAnnouncements() {
+            fetch('/communications/contest-announcements/check/')
+                .then(response => response.json())
+                .then(data => {
+                    data.announcements.forEach(announcement => {
+                        showContestAnnouncementNotification(announcement);
+                    });
+                })
+                .catch(error => console.error('Error checking contest announcements:', error));
+        }
+        
+        function showContestAnnouncementNotification(announcement) {
+            // Check if already shown
+            if (window.shownAnnouncements.has(announcement.id)) {
+                return;
+            }
+            window.shownAnnouncements.add(announcement.id);
+            localStorage.setItem('shownAnnouncements', JSON.stringify([...window.shownAnnouncements]));
+            
+            // Play sound
+            playNotificationSound('info');
+            
+            // Create notification
+            let container = document.getElementById('notification-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'notification-container';
+                container.style.cssText = `
+                    position: fixed;
+                    bottom: 20px;
+                    right: 20px;
+                    z-index: 9999;
+                    display: flex;
+                    flex-direction: column-reverse;
+                    gap: 12px;
+                    pointer-events: none;
+                `;
+                document.body.appendChild(container);
+            }
+            
+            const notification = document.createElement('div');
+            notification.className = 'contest-announcement-notification bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl shadow-2xl border border-white/20';
+            notification.style.cssText = `
+                min-width: 320px;
+                max-width: 400px;
+                animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+                pointer-events: auto;
+                transform: translateY(100%);
+            `;
+            
+            notification.innerHTML = `
+                <div class="p-4">
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-bullhorn text-2xl opacity-90"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs opacity-75 mb-1">${announcement.contest}</p>
+                            <p class="text-lg font-bold mb-1">${announcement.title}</p>
+                            <p class="text-sm opacity-90">${announcement.message}</p>
+                        </div>
+                        <button class="flex-shrink-0 text-white/70 hover:text-white transition-colors p-1" onclick="markContestAnnouncementViewed(${announcement.id}, this)">
+                            <i class="fas fa-times text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.transform = 'translateY(0)';
+                notification.style.animation = 'none';
+            }, 50);
+            
+            setTimeout(() => {
+                markContestAnnouncementViewed(announcement.id, notification.querySelector('button'));
+            }, 3000);
+        }
+        
+        function markContestAnnouncementViewed(announcementId, button) {
+            fetch(`/communications/contest-announcements/mark-viewed/${announcementId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+                    'Content-Type': 'application/json'
+                }
+            }).then(() => {
+                const notification = button.closest('.contest-announcement-notification');
+                notification.style.transform = 'translateY(100%)';
+                notification.style.opacity = '0';
+                setTimeout(() => notification.remove(), 300);
+            });
+        }
+        
+        // Track shown announcements globally using localStorage
+        window.shownAnnouncements = new Set(JSON.parse(localStorage.getItem('shownAnnouncements') || '[]'));
+        
+        // Check for unread messages
+        function checkUnreadMessages() {
+            fetch('/communications/check-unread/')
+                .then(response => response.json())
+                .then(data => {
+                    // Regular user notifications
+                    const bellDesktop = document.getElementById('message-bell');
+                    const bellMobile = document.getElementById('message-bell-mobile');
+                    const bellCount = document.getElementById('bell-count');
+                    const bellCountMobile = document.getElementById('bell-count-mobile');
+                    
+                    // Admin notifications
+                    const adminBellDesktop = document.getElementById('admin-message-bell');
+                    const adminBellMobile = document.getElementById('admin-message-bell-mobile');
+                    const adminBellCount = document.getElementById('admin-bell-count');
+                    const adminBellCountMobile = document.getElementById('admin-bell-count-mobile');
+                    
+                    if (data.unread_count > 0) {
+                        const countText = data.unread_count > 99 ? '99+' : data.unread_count;
+                        
+                        // Update regular user bells
+                        if (bellCount) bellCount.textContent = countText;
+                        if (bellCountMobile) bellCountMobile.textContent = countText;
+                        if (bellDesktop) bellDesktop.classList.remove('hidden');
+                        if (bellMobile) bellMobile.classList.remove('hidden');
+                        
+                        // Update admin bells
+                        if (adminBellCount) adminBellCount.textContent = countText;
+                        if (adminBellCountMobile) adminBellCountMobile.textContent = countText;
+                        if (adminBellDesktop) adminBellDesktop.classList.remove('hidden');
+                        if (adminBellMobile) adminBellMobile.classList.remove('hidden');
+                    } else {
+                        // Hide regular user bells
+                        if (bellDesktop) bellDesktop.classList.add('hidden');
+                        if (bellMobile) bellMobile.classList.add('hidden');
+                        
+                        // Hide admin bells
+                        if (adminBellDesktop) adminBellDesktop.classList.add('hidden');
+                        if (adminBellMobile) adminBellMobile.classList.add('hidden');
+                    }
+                })
+                .catch(error => console.error('Error checking messages:', error));
+        }
         
         // Global system ready
         document.addEventListener('DOMContentLoaded', function() {
@@ -369,18 +573,44 @@
             
             // Start checking for pending submissions if user is logged in
             {% if user.is_authenticated %}
-            // Initial check after 2 seconds
-            setTimeout(checkPendingSubmissions, 2000);
-            // Then check every 5 seconds
-            setInterval(checkPendingSubmissions, 5000);
+            // Check for unread messages immediately and then every 10 seconds
+            checkUnreadMessages();
+            setInterval(checkUnreadMessages, 10000);
+            
+            // Check for contest announcements immediately and then every 5 seconds
+            checkContestAnnouncements();
+            setInterval(checkContestAnnouncements, 5000);
+            
+            // Add manual test button (remove in production)
+            if (window.location.search.includes('debug=1')) {
+                const testBtn = document.createElement('button');
+                testBtn.textContent = 'Test Bell';
+                testBtn.className = 'fixed bottom-4 left-4 bg-blue-500 text-white px-3 py-2 rounded z-50';
+                testBtn.onclick = checkUnreadMessages;
+                document.body.appendChild(testBtn);
+            }
+            
+            // Don't start notifications on message page
+            if (!window.location.pathname.includes('/my-messages/')) {
+                // Initial check after 2 seconds
+                setTimeout(checkPendingSubmissions, 2000);
+                // Then check every 5 seconds
+                setInterval(checkPendingSubmissions, 5000);
+            }
             {% endif %}
         });
         
         // Track notified submissions to avoid duplicates
         window.notifiedSubmissionIds = new Set();
+        window.lastMessageCheck = 0;
         
         // Check for pending submissions and show notifications
         function checkPendingSubmissions() {
+            // Don't show notifications on message page
+            if (window.location.pathname.includes('/my-messages/')) {
+                return;
+            }
+            
             fetch('/submissions/check-pending/')
                 .then(response => response.json())
                 .then(data => {

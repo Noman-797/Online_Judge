@@ -62,10 +62,16 @@
                                 </div>
                             </td>
                             <td>
-                                <a href="{% url 'problems:problem_detail' submission.problem.slug %}" 
-                                   class="link link-primary">
-                                    {{ submission.problem.title }}
-                                </a>
+                                {% if submission.problem.contest_only %}
+                                    <span class="text-gray-900">
+                                        {{ submission.problem.title }} <span class="text-xs text-purple-600">(Contest Only)</span>
+                                    </span>
+                                {% else %}
+                                    <a href="{% url 'problems:problem_detail' submission.problem.slug %}" 
+                                       class="link link-primary">
+                                        {{ submission.problem.title }}
+                                    </a>
+                                {% endif %}
                             </td>
                             <td>
                                 <span class="badge badge-outline">{{ submission.get_language_display }}</span>

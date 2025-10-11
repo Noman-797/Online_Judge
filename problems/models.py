@@ -29,6 +29,7 @@ class Problem(models.Model):
     constraints = models.TextField(blank=True)
     sample_input = models.TextField()
     sample_output = models.TextField()
+    sample_note = models.CharField(max_length=500, blank=True, help_text="Optional explanation for sample input/output")
     difficulty = models.CharField(max_length=10, choices=DIFFICULTY_CHOICES)
     time_limit = models.IntegerField(default=2)  # seconds
     memory_limit = models.IntegerField(default=128)  # MB
@@ -62,6 +63,7 @@ class TestCase(models.Model):
     input_data = models.TextField()
     expected_output = models.TextField()
     is_sample = models.BooleanField(default=False)
+    note = models.CharField(max_length=200, blank=True, help_text="Optional note for this test case")
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:

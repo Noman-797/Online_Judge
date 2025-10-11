@@ -34,21 +34,47 @@
                     {% endif %}
                     <span class="text-xs sm:text-sm text-gray-500">•</span>
                     <span class="text-xs sm:text-sm text-gray-600 truncate">{{ problem.category.name }}</span>
+                    <span class="text-xs sm:text-sm text-gray-500">•</span>
+                    {% if contest.status == 'running' %}
+                    <span id="contest-timer" class="text-xs sm:text-sm font-bold px-2 py-1 bg-red-100 text-red-700 rounded-full border border-red-300">
+                        <i class="fas fa-clock mr-1"></i>--:--:--
+                    </span>
+                    {% elif contest.status == 'ended' %}
+                    <span class="text-xs sm:text-sm font-medium px-2 py-1 bg-gray-100 text-gray-600 rounded-full">
+                        <i class="fas fa-flag-checkered mr-1"></i>Contest Ended
+                    </span>
+                    {% else %}
+                    <span class="text-xs sm:text-sm font-medium px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
+                        <i class="fas fa-hourglass-start mr-1"></i>Contest Upcoming
+                    </span>
+                    {% endif %}
                 </div>
             </div>
             <div class="flex items-center gap-2">
+                {% if prev_problem %}
+                <a href="{% url 'contests:contest_problem_solve' contest.slug prev_problem.problem.slug %}" class="btn btn-outline btn-sm flex-shrink-0" title="Go to {{ prev_problem.problem.title }}">
+                    <i class="fas fa-arrow-left mr-1"></i><span class="hidden sm:inline">Prev</span>
+                </a>
+                {% else %}
+                <span class="btn btn-outline btn-sm flex-shrink-0 opacity-50 cursor-not-allowed" title="No previous problem">
+                    <i class="fas fa-arrow-left mr-1"></i><span class="hidden sm:inline">Prev</span>
+                </span>
+                {% endif %}
+                <a href="{% url 'contests:contest_problems' contest.slug %}" class="btn btn-outline btn-sm flex-shrink-0">
+                    <i class="fas fa-list mr-1"></i><span class="hidden sm:inline">Problems</span>
+                </a>
+                {% if next_problem %}
+                <a href="{% url 'contests:contest_problem_solve' contest.slug next_problem.problem.slug %}" class="btn btn-outline btn-sm flex-shrink-0" title="Go to {{ next_problem.problem.title }}">
+                    <span class="hidden sm:inline">Next</span><i class="fas fa-arrow-right ml-1"></i>
+                </a>
+                {% else %}
+                <span class="btn btn-outline btn-sm flex-shrink-0 opacity-50 cursor-not-allowed" title="No next problem">
+                    <span class="hidden sm:inline">Next</span><i class="fas fa-arrow-right ml-1"></i>
+                </span>
+                {% endif %}
                 {% if user.is_staff %}
                     <a href="{% url 'problems:edit_problem' problem.slug %}" class="btn btn-outline btn-sm flex-shrink-0">
                         <i class="fas fa-edit mr-1"></i><span class="hidden sm:inline">Edit</span>
-                    </a>
-                {% endif %}
-                {% if user.is_staff %}
-                    <a href="{% url 'problems:admin_problems' %}" class="btn btn-outline btn-sm flex-shrink-0">
-                        <i class="fas fa-arrow-left mr-1"></i><span class="hidden sm:inline">Back</span>
-                    </a>
-                {% else %}
-                    <a href="javascript:history.back()" class="btn btn-outline btn-sm flex-shrink-0">
-                        <i class="fas fa-arrow-left mr-1"></i><span class="hidden sm:inline">Back</span>
                     </a>
                 {% endif %}
             </div>
@@ -62,7 +88,7 @@
             <div class="flex-1 lg:overflow-y-auto p-3 sm:p-6">
                 <!-- Problem Statement -->
                 <div class="mb-4 sm:mb-6">
-                    <div class="text-gray-700 leading-relaxed prose prose-sm sm:prose max-w-none" style="color: #374151 !important;">
+                    <div class="text-gray-700 leading-relaxed prose prose-sm sm:prose max-w-none prose-ul:list-disc prose-ol:list-decimal prose-li:ml-4" style="color: #374151 !important;">
                         {{ problem.description|safe }}
                     </div>
                 </div>
@@ -71,7 +97,7 @@
                 {% if problem.input_format %}
                 <div class="mb-4 sm:mb-6">
                     <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-2 sm:mb-3" style="color: black !important;">Input Format</h3>
-                    <div class="text-gray-700 leading-relaxed prose prose-sm sm:prose max-w-none" style="color: #374151 !important;">
+                    <div class="text-gray-700 leading-relaxed prose prose-sm sm:prose max-w-none prose-ul:list-disc prose-ol:list-decimal prose-li:ml-4" style="color: #374151 !important;">
                         {{ problem.input_format|safe }}
                     </div>
                 </div>
@@ -81,7 +107,7 @@
                 {% if problem.output_format %}
                 <div class="mb-4 sm:mb-6">
                     <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-2 sm:mb-3" style="color: black !important;">Output Format</h3>
-                    <div class="text-gray-700 leading-relaxed prose prose-sm sm:prose max-w-none" style="color: #374151 !important;">
+                    <div class="text-gray-700 leading-relaxed prose prose-sm sm:prose max-w-none prose-ul:list-disc prose-ol:list-decimal prose-li:ml-4" style="color: #374151 !important;">
                         {{ problem.output_format|safe }}
                     </div>
                 </div>
@@ -91,7 +117,7 @@
                 {% if problem.constraints %}
                 <div class="mb-4 sm:mb-6">
                     <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-2 sm:mb-3" style="color: black !important;">Constraints</h3>
-                    <div class="text-gray-700 leading-relaxed prose prose-sm sm:prose max-w-none" style="color: #374151 !important;">
+                    <div class="text-gray-700 leading-relaxed prose prose-sm sm:prose max-w-none prose-ul:list-disc prose-ol:list-decimal prose-li:ml-4" style="color: #374151 !important;">
                         {{ problem.constraints|safe }}
                     </div>
                 </div>
@@ -110,14 +136,17 @@
                             <div class="bg-gray-100 px-3 py-2 border-b border-gray-200">
                                 <div class="text-xs font-medium text-gray-700">Input</div>
                             </div>
-                            <div class="px-3 py-2 border-b border-gray-200" style="background: white !important;">
-                                <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono" style="color: #374151 !important;">{{ problem.sample_input|safe }}</pre>
+                            <div class="px-3 py-2 border-b border-gray-200 relative" style="background: white !important;">
+                                <button class="copy-btn absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-1 rounded" onclick="copyToClipboard(this, `{{ problem.sample_input|safe|escapejs }}`)" title="Copy input">
+                                    <i class="fas fa-copy text-xs"></i>
+                                </button>
+                                <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono pr-8" style="color: #374151 !important;">{{ problem.sample_input|safe }}</pre>
                             </div>
                             <div class="bg-gray-100 px-3 py-2 border-b border-gray-200">
                                 <div class="text-xs font-medium text-gray-700">Output</div>
                             </div>
                             <div class="px-3 py-2" style="background: white !important;">
-                                <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono" style="color: #374151 !important;">{{ problem.sample_output|safe }}</pre>
+                                <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono" style="color: #374151 !important;">{{ problem.sample_output|striptags }}</pre>
                             </div>
                         </div>
                         <!-- Desktop: Table Layout -->
@@ -130,11 +159,14 @@
                             </thead>
                             <tbody>
                                 <tr class="border-t border-gray-200">
-                                    <td class="px-4 py-3 border-r border-gray-200 w-1/2 align-top" style="background: white !important;">
-                                        <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono" style="color: #374151 !important;">{{ problem.sample_input|safe }}</pre>
+                                    <td class="px-4 py-3 border-r border-gray-200 w-1/2 align-top relative" style="background: white !important;">
+                                        <button class="copy-btn absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-1 rounded" onclick="copyToClipboard(this, `{{ problem.sample_input|safe|escapejs }}`)" title="Copy input">
+                                            <i class="fas fa-copy text-xs"></i>
+                                        </button>
+                                        <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono pr-8" style="color: #374151 !important;">{{ problem.sample_input|safe }}</pre>
                                     </td>
                                     <td class="px-4 py-3 w-1/2 align-top" style="background: white !important;">
-                                        <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono" style="color: #374151 !important;">{{ problem.sample_output|safe }}</pre>
+                                        <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono" style="color: #374151 !important;">{{ problem.sample_output|striptags }}</pre>
                                     </td>
                                 </tr>
                             </tbody>
@@ -151,14 +183,17 @@
                             <div class="bg-gray-100 px-3 py-2 border-b border-gray-200">
                                 <div class="text-xs font-medium text-gray-700">Input</div>
                             </div>
-                            <div class="px-3 py-2 border-b border-gray-200" style="background: white !important;">
-                                <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono" style="color: #374151 !important;">{{ test_case.input_data|default:"(no input)" }}</pre>
+                            <div class="px-3 py-2 border-b border-gray-200 relative" style="background: white !important;">
+                                <button class="copy-btn absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-1 rounded" onclick="copyToClipboard(this, `{{ test_case.input_data|default:'(no input)'|escapejs }}`)" title="Copy input">
+                                    <i class="fas fa-copy text-xs"></i>
+                                </button>
+                                <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono pr-8" style="color: #374151 !important;">{{ test_case.input_data|default:"(no input)" }}</pre>
                             </div>
                             <div class="bg-gray-100 px-3 py-2 border-b border-gray-200">
                                 <div class="text-xs font-medium text-gray-700">Output</div>
                             </div>
                             <div class="px-3 py-2" style="background: white !important;">
-                                <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono" style="color: #374151 !important;">{{ test_case.expected_output }}</pre>
+                                <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono" style="color: #374151 !important;">{{ test_case.expected_output|striptags }}</pre>
                             </div>
                         </div>
                         <!-- Desktop: Table Layout -->
@@ -171,11 +206,14 @@
                             </thead>
                             <tbody>
                                 <tr class="border-t border-gray-200">
-                                    <td class="px-4 py-3 border-r border-gray-200 w-1/2 align-top" style="background: white !important;">
-                                        <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono" style="color: #374151 !important;">{{ test_case.input_data|default:"(no input)" }}</pre>
+                                    <td class="px-4 py-3 border-r border-gray-200 w-1/2 align-top relative" style="background: white !important;">
+                                        <button class="copy-btn absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-1 rounded" onclick="copyToClipboard(this, `{{ test_case.input_data|default:'(no input)'|escapejs }}`)" title="Copy input">
+                                            <i class="fas fa-copy text-xs"></i>
+                                        </button>
+                                        <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono pr-8" style="color: #374151 !important;">{{ test_case.input_data|default:"(no input)" }}</pre>
                                     </td>
                                     <td class="px-4 py-3 w-1/2 align-top" style="background: white !important;">
-                                        <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono" style="color: #374151 !important;">{{ test_case.expected_output }}</pre>
+                                        <pre class="text-gray-700 text-sm whitespace-pre-wrap font-mono" style="color: #374151 !important;">{{ test_case.expected_output|striptags }}</pre>
                                     </td>
                                 </tr>
                             </tbody>
@@ -195,6 +233,16 @@
                     </div>
                 </div>
                 {% endif %}
+
+                <!-- Submission Status -->
+                {% if user.is_authenticated %}
+                <div id="submissionStatus" class="mb-4 sm:mb-6 hidden">
+                    <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-2 sm:mb-3" style="color: black !important;">Latest Submission</h3>
+                    <div id="statusContent" class="bg-gray-50 p-3 rounded-lg border">
+                        <!-- Status will be populated here -->
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
 
@@ -207,18 +255,33 @@
                 <!-- Editor Header -->
                 <div class="border-b border-gray-200 p-3 sm:p-4 flex-shrink-0" style="background: white !important;">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        {% if is_admin and contest.status == 'running' %}
+                            <div class="flex items-center gap-2 px-3 py-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                                <i class="fas fa-info-circle"></i>
+                                <span>Admin users cannot participate in live contests</span>
+                            </div>
+                        {% endif %}
                         <select id="language" class="px-3 py-2 border border-gray-300 rounded bg-white text-gray-900 text-sm w-full sm:w-auto" style="background: white !important; color: black !important;">
                             <option value="c" {% if user.userprofile.preferred_language == 'c' %}selected{% endif %}>C</option>
                             <option value="cpp" {% if user.userprofile.preferred_language == 'cpp' %}selected{% endif %}>C++</option>
                             <option value="python" {% if user.userprofile.preferred_language == 'python' %}selected{% endif %}>Python</option>
                         </select>
                         <div class="flex gap-2">
-                            <button id="testBtn" class="flex-1 sm:flex-none px-3 py-2 bg-gray-200 text-gray-900 hover:bg-gray-300 rounded text-sm font-medium">
-                                <i class="fas fa-play mr-1"></i>Test
-                            </button>
-                            <button id="submitBtn" class="flex-1 sm:flex-none px-3 py-2 bg-green-600 text-white hover:bg-green-700 rounded text-sm font-medium">
-                                <i class="fas fa-paper-plane mr-1"></i>Submit
-                            </button>
+                            {% if is_admin and contest.status == 'running' %}
+                                <button class="flex-1 sm:flex-none px-3 py-2 bg-gray-400 text-gray-600 rounded text-sm font-medium cursor-not-allowed" disabled title="Admin users cannot test code during live contests">
+                                    <i class="fas fa-ban mr-1"></i>Test Disabled
+                                </button>
+                                <button class="flex-1 sm:flex-none px-3 py-2 bg-gray-400 text-gray-600 rounded text-sm font-medium cursor-not-allowed" disabled title="Admin users cannot submit solutions during live contests">
+                                    <i class="fas fa-ban mr-1"></i>Submit Disabled
+                                </button>
+                            {% else %}
+                                <button id="testBtn" class="flex-1 sm:flex-none px-3 py-2 bg-gray-200 text-gray-900 hover:bg-gray-300 rounded text-sm font-medium">
+                                    <i class="fas fa-play mr-1"></i>Test
+                                </button>
+                                <button id="submitBtn" class="flex-1 sm:flex-none px-3 py-2 bg-green-600 text-white hover:bg-green-700 rounded text-sm font-medium">
+                                    <i class="fas fa-paper-plane mr-1"></i>Submit
+                                </button>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -234,7 +297,7 @@
                     <div id="resizer" class="hidden" style="height: 5px; background: #ccc; cursor: row-resize; user-select: none;"></div>
 
                     <!-- Console/Results Pane -->
-                    <div id="resultPanel" class="bg-gray-50 flex flex-col hidden" style="height: 0%; min-height: 150px; overflow-y: auto; background: #f9fafb !important;">
+                    <div id="resultPanel" class="bg-gray-50 flex flex-col hidden" style="height: 0%; min-height: 150px; background: #f9fafb !important;">
                     <!-- Panel Header -->
                     <div class="flex items-center justify-between p-3 border-b border-gray-200" style="background: white !important;">
                         <h4 class="text-sm font-medium text-gray-900" style="color: black !important;">Results</h4>
@@ -265,7 +328,7 @@
                     </div>
                     
                     <!-- Result State -->
-                    <div id="resultState" class="p-2 flex-1 overflow-y-auto hidden">
+                    <div id="resultState" class="p-2 flex-1 hidden">
                         <div id="resultContent">
                             <!-- Results will be populated here -->
                         </div>
@@ -304,7 +367,7 @@ require(['vs/editor/editor.main'], function () {
     if (preferredLang === 'c') {
         initialCode = '#include <stdio.h>\n\nint main() {\n    \n    return 0;\n}';
     } else if (preferredLang === 'cpp') {
-        initialCode = '#include <iostream>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}';
+        initialCode = '#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}';
     } else if (preferredLang === 'python') {
         initialCode = '# Your Python code here\n';
     }
@@ -348,7 +411,7 @@ require(['vs/editor/editor.main'], function () {
         if (lang === 'c') {
             editor.setValue('#include <stdio.h>\n\nint main() {\n    \n    return 0;\n}');
         } else if (lang === 'cpp') {
-            editor.setValue('#include <iostream>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}');
+            editor.setValue('#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}');
         } else if (lang === 'python') {
             editor.setValue('# Your Python code here\n');
         }
@@ -417,6 +480,7 @@ function stopResize() {
 }
 
 // Test button handler
+{% if not is_admin or contest.status != 'running' %}
 document.getElementById('testBtn').addEventListener('click', function() {
     const code = editor.getValue();
     const language = document.getElementById('language').value;
@@ -457,8 +521,10 @@ document.getElementById('testBtn').addEventListener('click', function() {
         this.innerHTML = '<i class="fas fa-play mr-1"></i>Test';
     });
 });
+{% endif %}
 
 // Submit button handler
+{% if not is_admin or contest.status != 'running' %}
 document.getElementById('submitBtn').addEventListener('click', function() {
     const code = editor.getValue();
     const language = document.getElementById('language').value;
@@ -490,9 +556,20 @@ document.getElementById('submitBtn').addEventListener('click', function() {
     .then(data => {
         showResult(data, 'submit');
         
+        // Start polling for result panel if queued
+        if (data.verdict === 'QUEUED') {
+            startResultPanelPolling(data.submission_id);
+        }
+        
         // Handle submission result
         if (data.submission_id) {
+            // Show submission status permanently
+            showSubmissionStatus(data);
+            
             if (data.verdict === 'QUEUED') {
+                // Start polling for this submission
+                startPollingSubmission(data.submission_id);
+                
                 // Add to global pending submissions for contest
                 if (window.globalPendingSubmissions) {
                     window.globalPendingSubmissions.add(data.submission_id);
@@ -525,6 +602,7 @@ document.getElementById('submitBtn').addEventListener('click', function() {
         this.innerHTML = '<i class="fas fa-paper-plane mr-1"></i>Submit';
     });
 });
+{% endif %}
 
 // Result display functions
 function showResultPanel() {
@@ -698,27 +776,15 @@ function showResult(data, type) {
             <div class="flex items-center gap-3">
                 <i class="${verdictIcon} ${verdictClass} text-2xl"></i>
                 <div>
-                    <h4 class="text-lg font-bold ${verdictClass}">${verdictText}</h4>
+                    <h4 class="text-lg font-bold ${verdictClass}">${verdictText}
+                        ${(verdict === 'QUEUED' || verdict === 'JUDGING') ? '<span class="ml-2 text-xs text-blue-500"><i class="fas fa-sync fa-spin"></i> Auto-updating...</span>' : ''}
+                    </h4>
                     <p class="text-sm text-gray-600">${type === 'test' ? 'Sample Test Result' : 'Final Verdict'}</p>
                 </div>
             </div>
     `;
     
-    // Show time and memory stats only for submit mode
-    if (type === 'submit') {
-        html += `
-            <div class="grid grid-cols-2 gap-2">
-                <div class="bg-gray-50 p-2 rounded">
-                    <div class="text-xs text-gray-600">Time</div>
-                    <div class="font-semibold text-gray-900 text-xs">${((data.execution_time || 0) * 1000).toFixed(1)}ms</div>
-                </div>
-                <div class="bg-gray-50 p-2 rounded">
-                    <div class="text-xs text-gray-600">Memory</div>
-                    <div class="font-semibold text-gray-900 text-xs">${data.memory_used || 0}KB</div>
-                </div>
-            </div>
-        `;
-    }
+
     
     // Show test case progress for both test and submit
     const testPassed = data.test_cases_passed || 0;
@@ -737,15 +803,7 @@ function showResult(data, type) {
         `;
     }
     
-    // Show error details only for submit, not for test
-    if (type === 'submit' && data.error_message && (verdict === 'CE' || verdict === 'RE')) {
-        html += `
-            <div class="bg-red-50 border border-red-200 rounded p-2">
-                <div class="text-xs text-red-600 mb-1">Error Details</div>
-                <pre class="text-xs text-red-800 whitespace-pre-wrap font-mono">${data.error_message}</pre>
-            </div>
-        `;
-    }
+
     
     html += '</div>';
     
@@ -769,8 +827,288 @@ function showError(message) {
     `;
 }
 
+function showSubmissionStatus(data) {
+    const statusSection = document.getElementById('submissionStatus');
+    const statusContent = document.getElementById('statusContent');
+    
+    if (!statusSection || !statusContent) return;
+    
+    const verdict = data.verdict || 'UNKNOWN';
+    let verdictClass = 'text-gray-600';
+    let verdictIcon = 'fas fa-question-circle';
+    let verdictText = verdict;
+    
+    switch(verdict) {
+        case 'QUEUED':
+            verdictClass = 'text-blue-500';
+            verdictIcon = 'fas fa-clock';
+            verdictText = 'Queued';
+            break;
+        case 'JUDGING':
+            verdictClass = 'text-yellow-500';
+            verdictIcon = 'fas fa-spinner fa-spin';
+            verdictText = 'Judging';
+            break;
+        case 'AC':
+            verdictClass = 'text-green-600';
+            verdictIcon = 'fas fa-check-circle';
+            verdictText = 'Accepted';
+            break;
+        case 'WA':
+            verdictClass = 'text-red-600';
+            verdictIcon = 'fas fa-times-circle';
+            verdictText = 'Wrong Answer';
+            break;
+        case 'CE':
+            verdictClass = 'text-yellow-600';
+            verdictIcon = 'fas fa-exclamation-triangle';
+            verdictText = 'Compilation Error';
+            break;
+        case 'RE':
+            verdictClass = 'text-orange-600';
+            verdictIcon = 'fas fa-exclamation-circle';
+            verdictText = 'Runtime Error';
+            break;
+        case 'TLE':
+            verdictClass = 'text-purple-600';
+            verdictIcon = 'fas fa-clock';
+            verdictText = 'Time Limit Exceeded';
+            break;
+        case 'MLE':
+            verdictClass = 'text-blue-600';
+            verdictIcon = 'fas fa-memory';
+            verdictText = 'Memory Limit Exceeded';
+            break;
+        case 'PE':
+            verdictClass = 'text-gray-600';
+            verdictIcon = 'fas fa-align-left';
+            verdictText = 'Presentation Error';
+            break;
+    }
+    
+    let html = `
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <i class="${verdictIcon} ${verdictClass} text-xl"></i>
+                <div>
+                    <div class="font-semibold ${verdictClass}">${verdictText}
+                        ${data.is_polling ? '<span class="ml-2 text-xs text-blue-500"><i class="fas fa-sync fa-spin"></i> Auto-updating...</span>' : ''}
+                    </div>
+                    <div class="text-sm text-gray-500">Submission #${data.submission_id}</div>
+                </div>
+            </div>
+            <div class="flex gap-4 text-sm">
+                <div class="text-center">
+                    <div class="text-gray-500">Time</div>
+                    <div class="font-semibold">${((data.execution_time || 0) * 1000).toFixed(1)}ms</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-gray-500">Memory</div>
+                    <div class="font-semibold">${data.memory_used || 0}KB</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-gray-500">Tests</div>
+                    <div class="font-semibold">${data.test_cases_passed || 0}/${data.total_test_cases || 0}</div>
+                </div>
+                <div class="text-center">
+                    <a href="/submissions/detail/${data.submission_id}/?from=contest&contest={{ contest.slug }}&problem={{ problem.slug }}" class="btn btn-outline btn-xs" target="_blank">
+                        <i class="fas fa-external-link-alt mr-1"></i>Details
+                    </a>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Error details removed from latest submission display
+    
+    statusContent.innerHTML = html;
+    statusSection.classList.remove('hidden');
+    
+    // Scroll to status section
+    statusSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
 
+// Polling function for submission status
+let pollingIntervals = new Map();
 
+function startPollingSubmission(submissionId) {
+    // Clear existing interval if any
+    if (pollingIntervals.has(submissionId)) {
+        clearInterval(pollingIntervals.get(submissionId));
+    }
+    
+    const interval = setInterval(() => {
+        fetch(`/submissions/status/${submissionId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.verdict !== 'QUEUED' && data.verdict !== 'JUDGING') {
+                    // Update the status display
+                    showSubmissionStatus({
+                        submission_id: submissionId,
+                        verdict: data.verdict,
+                        execution_time: data.execution_time || 0,
+                        memory_used: data.memory_used || 0,
+                        test_cases_passed: data.test_cases_passed || 0,
+                        total_test_cases: data.total_test_cases || 0,
+                        error_message: data.compilation_error || data.runtime_error || null
+                    });
+                    
+                    // Stop polling
+                    clearInterval(interval);
+                    pollingIntervals.delete(submissionId);
+                    
+                    // Remove from pending submissions
+                    if (window.globalPendingSubmissions) {
+                        window.globalPendingSubmissions.delete(submissionId);
+                    }
+                } else {
+                    // Update status to show it's still processing
+                    showSubmissionStatus({
+                        submission_id: submissionId,
+                        verdict: data.verdict,
+                        execution_time: 0,
+                        memory_used: 0,
+                        test_cases_passed: 0,
+                        total_test_cases: 0,
+                        error_message: null,
+                        is_polling: true
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error polling submission:', error);
+                clearInterval(interval);
+                pollingIntervals.delete(submissionId);
+            });
+    }, 2000); // Poll every 2 seconds
+    
+    pollingIntervals.set(submissionId, interval);
+}
+
+// Result panel polling
+let resultPanelInterval = null;
+
+function startResultPanelPolling(submissionId) {
+    if (resultPanelInterval) {
+        clearInterval(resultPanelInterval);
+    }
+    
+    resultPanelInterval = setInterval(() => {
+        fetch(`/submissions/status/${submissionId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.verdict !== 'QUEUED' && data.verdict !== 'JUDGING') {
+                    // Update result panel
+                    showResult(data, 'submit');
+                    
+                    // Stop polling
+                    clearInterval(resultPanelInterval);
+                    resultPanelInterval = null;
+                } else {
+                    // Update with current status
+                    showResult(data, 'submit');
+                }
+            })
+            .catch(error => {
+                console.error('Error polling result panel:', error);
+                clearInterval(resultPanelInterval);
+                resultPanelInterval = null;
+            });
+    }, 2000);
+}
+
+// Show latest submission on page load
+{% if latest_submission %}
+document.addEventListener('DOMContentLoaded', function() {
+    const latestSubmission = {
+        submission_id: {{ latest_submission.id }},
+        verdict: '{{ latest_submission.verdict }}',
+        execution_time: {{ latest_submission.execution_time|default:0 }},
+        memory_used: {{ latest_submission.memory_used|default:0 }},
+        test_cases_passed: {{ latest_submission.test_cases_passed|default:0 }},
+        total_test_cases: {{ latest_submission.total_test_cases|default:0 }},
+        error_message: {% if latest_submission.compilation_error or latest_submission.runtime_error %}'{{ latest_submission.compilation_error|default:latest_submission.runtime_error|escapejs }}'{% else %}null{% endif %}
+    };
+    
+    showSubmissionStatus(latestSubmission);
+    
+    // If latest submission is still queued/judging, start polling
+    if (latestSubmission.verdict === 'QUEUED' || latestSubmission.verdict === 'JUDGING') {
+        startPollingSubmission({{ latest_submission.id }});
+    }
+});
+{% endif %}
+
+// Contest Timer
+{% if contest.status == 'running' %}
+function updateContestTimer() {
+    const endTime = new Date('{{ contest.end_time|date:"c" }}').getTime();
+    const now = new Date().getTime();
+    const timeLeft = endTime - now;
+    
+    if (timeLeft > 0) {
+        const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+        
+        const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        // Change color based on time remaining
+        const timer = document.getElementById('contest-timer');
+        if (timeLeft < 300000) { // Less than 5 minutes
+            timer.className = 'text-xs sm:text-sm font-bold px-2 py-1 bg-red-200 text-red-800 rounded-full border border-red-400 animate-pulse';
+            timer.innerHTML = `<i class="fas fa-exclamation-triangle mr-1"></i>${timeString}`;
+        } else if (timeLeft < 1800000) { // Less than 30 minutes
+            timer.className = 'text-xs sm:text-sm font-bold px-2 py-1 bg-orange-100 text-orange-700 rounded-full border border-orange-300';
+            timer.innerHTML = `<i class="fas fa-clock mr-1"></i>${timeString}`;
+        } else {
+            timer.innerHTML = `<i class="fas fa-clock mr-1"></i>${timeString}`;
+        }
+    } else {
+        const timer = document.getElementById('contest-timer');
+        timer.className = 'text-xs sm:text-sm font-medium px-2 py-1 bg-gray-100 text-gray-600 rounded-full';
+        timer.innerHTML = '<i class="fas fa-flag-checkered mr-1"></i>Contest Ended';
+    }
+}
+
+// Update timer every second
+setInterval(updateContestTimer, 1000);
+updateContestTimer(); // Initial call
+{% endif %}
+
+// Copy to clipboard function
+function copyToClipboard(button, text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Show success feedback
+        const originalIcon = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check text-xs text-green-500"></i>';
+        button.title = 'Copied!';
+        
+        setTimeout(() => {
+            button.innerHTML = originalIcon;
+            button.title = button.innerHTML.includes('input') ? 'Copy input' : 'Copy output';
+        }, 1000);
+    }).catch(function(err) {
+        console.error('Failed to copy: ', err);
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        // Show success feedback
+        const originalIcon = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check text-xs text-green-500"></i>';
+        button.title = 'Copied!';
+        
+        setTimeout(() => {
+            button.innerHTML = originalIcon;
+            button.title = button.innerHTML.includes('input') ? 'Copy input' : 'Copy output';
+        }, 1000);
+    });
+}
 
 </script>
 {% endif %}

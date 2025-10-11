@@ -21,6 +21,11 @@
         </div>
     </div>
 
+<style>
+th:last-child { text-align: center !important; }
+td:last-child .flex { justify-content: center !important; }
+</style>
+
     <!-- Live Contests -->
     {% if running %}
     <div class="bg-white rounded-lg shadow-md border mb-6">
@@ -72,11 +77,11 @@
                                         <i class="fas fa-cogs"></i>
                                     </a>
                                     <a href="{% url 'contests:monitor_contest' contest.slug %}" class="text-purple-600 hover:text-purple-800 p-2 rounded hover:bg-purple-50" title="Monitor Contest">
-                                        <i class="fas fa-eye-slash"></i>
+                                        <i class="fas fa-chart-line"></i>
                                     </a>
-                                    <a href="{% url 'contests:delete_contest' contest.slug %}" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50" title="Delete Contest">
+                                    <button onclick="confirmDelete('{{ contest.title }}', '{% url 'contests:delete_contest' contest.slug %}'); return false;" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50" title="Delete Contest">
                                         <i class="fas fa-trash"></i>
-                                    </a>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -116,11 +121,11 @@
                                 <i class="fas fa-cogs text-sm"></i>
                             </a>
                             <a href="{% url 'contests:monitor_contest' contest.slug %}" class="text-purple-600 hover:text-purple-800 p-2 rounded hover:bg-purple-50" title="Monitor">
-                                <i class="fas fa-eye-slash text-sm"></i>
+                                <i class="fas fa-chart-line text-sm"></i>
                             </a>
-                            <a href="{% url 'contests:delete_contest' contest.slug %}" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50" title="Delete">
+                            <button onclick="confirmDelete('{{ contest.title }}', '{% url 'contests:delete_contest' contest.slug %}')" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50" title="Delete">
                                 <i class="fas fa-trash text-sm"></i>
-                            </a>
+                            </button>
                         </div>
                     </div>
                 {% endfor %}
@@ -165,12 +170,15 @@
                                 <a href="{% url 'contests:contest_detail' contest.slug %}" class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50" title="View Contest">
                                     <i class="fas fa-eye"></i>
                                 </a>
+                                <a href="{% url 'contests:edit_contest' contest.slug %}" class="text-yellow-600 hover:text-yellow-800 p-2 rounded hover:bg-yellow-50" title="Edit Contest">
+                                    <i class="fas fa-edit"></i>
+                                </a>
                                 <a href="{% url 'contests:manage_problems' contest.slug %}" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50" title="Manage Problems">
                                     <i class="fas fa-cogs"></i>
                                 </a>
-                                <a href="{% url 'contests:delete_contest' contest.slug %}" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50" title="Delete Contest">
+                                <button onclick="confirmDelete('{{ contest.title }}', '{% url 'contests:delete_contest' contest.slug %}'); return false;" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50" title="Delete Contest">
                                     <i class="fas fa-trash"></i>
-                                </a>
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -195,12 +203,15 @@
                         <a href="{% url 'contests:contest_detail' contest.slug %}" class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50" title="View">
                             <i class="fas fa-eye text-sm"></i>
                         </a>
+                        <a href="{% url 'contests:edit_contest' contest.slug %}" class="text-yellow-600 hover:text-yellow-800 p-2 rounded hover:bg-yellow-50" title="Edit">
+                            <i class="fas fa-edit text-sm"></i>
+                        </a>
                         <a href="{% url 'contests:manage_problems' contest.slug %}" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50" title="Problems">
                             <i class="fas fa-cogs text-sm"></i>
                         </a>
-                        <a href="{% url 'contests:delete_contest' contest.slug %}" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50" title="Delete">
+                        <button onclick="confirmDelete('{{ contest.title }}', '{% url 'contests:delete_contest' contest.slug %}'); return false;" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50" title="Delete">
                             <i class="fas fa-trash text-sm"></i>
-                        </a>
+                        </button>
                     </div>
                 </div>
             {% endfor %}
@@ -248,9 +259,12 @@
                                 <a href="{% url 'contests:manage_problems' contest.slug %}" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50" title="Manage Problems">
                                     <i class="fas fa-cogs"></i>
                                 </a>
-                                <a href="{% url 'contests:delete_contest' contest.slug %}" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50" title="Delete Contest">
-                                    <i class="fas fa-trash"></i>
+                                <a href="{% url 'contests:monitor_contest' contest.slug %}" class="text-purple-600 hover:text-purple-800 p-2 rounded hover:bg-purple-50" title="Monitor Contest">
+                                    <i class="fas fa-chart-line"></i>
                                 </a>
+                                <button onclick="confirmDelete('{{ contest.title }}', '{% url 'contests:delete_contest' contest.slug %}'); return false;" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50" title="Delete Contest">
+                                    <i class="fas fa-trash"></i>
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -278,9 +292,12 @@
                         <a href="{% url 'contests:manage_problems' contest.slug %}" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50" title="Problems">
                             <i class="fas fa-cogs text-sm"></i>
                         </a>
-                        <a href="{% url 'contests:delete_contest' contest.slug %}" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50" title="Delete">
-                            <i class="fas fa-trash text-sm"></i>
+                        <a href="{% url 'contests:monitor_contest' contest.slug %}" class="text-purple-600 hover:text-purple-800 p-2 rounded hover:bg-purple-50" title="Monitor">
+                            <i class="fas fa-chart-line text-sm"></i>
                         </a>
+                        <button onclick="confirmDelete('{{ contest.title }}', '{% url 'contests:delete_contest' contest.slug %}'); return false;" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50" title="Delete">
+                            <i class="fas fa-trash text-sm"></i>
+                        </button>
                     </div>
                 </div>
             {% endfor %}
@@ -302,4 +319,68 @@
     </div>
     {% endif %}
 </div>
+
+<!-- Delete Confirmation Modal -->
+<dialog id="delete_modal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg text-error">⚠️ Delete Contest</h3>
+        <div class="py-4">
+            <p class="mb-4">Are you sure you want to delete the contest <strong id="contest-name"></strong>?</p>
+            <div class="alert alert-error mb-4">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>
+                    <p class="font-semibold">This action cannot be undone!</p>
+                    <p class="text-sm">This will permanently remove:</p>
+                    <ul class="text-sm list-disc list-inside mt-1">
+                        <li>The contest and all its settings</li>
+                        <li>All participant submissions</li>
+                        <li>Contest leaderboard data</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Type the contest name to confirm:</span>
+                </label>
+                <input type="text" id="confirm-input" class="input input-bordered" placeholder="Contest name">
+            </div>
+        </div>
+        <div class="modal-action">
+            <button class="btn" onclick="document.getElementById('delete_modal').close()">Cancel</button>
+            <button id="confirm-delete-btn" class="btn btn-error" onclick="proceedDelete()" disabled>Delete Contest</button>
+        </div>
+    </div>
+</dialog>
+
+<script>
+let currentDeleteUrl = '';
+let currentContestTitle = '';
+
+function confirmDelete(contestTitle, deleteUrl, event) {
+    if (event) event.preventDefault();
+    currentDeleteUrl = deleteUrl;
+    currentContestTitle = contestTitle;
+    document.getElementById('contest-name').textContent = contestTitle;
+    document.getElementById('confirm-input').value = '';
+    document.getElementById('confirm-delete-btn').disabled = true;
+    document.getElementById('delete_modal').showModal();
+    return false;
+}
+
+// Enable delete button only when contest name matches
+document.getElementById('confirm-input').addEventListener('input', function() {
+    const deleteBtn = document.getElementById('confirm-delete-btn');
+    if (this.value === currentContestTitle) {
+        deleteBtn.disabled = false;
+        deleteBtn.classList.remove('btn-disabled');
+    } else {
+        deleteBtn.disabled = true;
+        deleteBtn.classList.add('btn-disabled');
+    }
+});
+
+function proceedDelete() {
+    window.location.href = currentDeleteUrl;
+}
+</script>
 {% endblock %}

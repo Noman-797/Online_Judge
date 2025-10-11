@@ -29,38 +29,42 @@
     </div>
 
     <!-- Search and Filter -->
-    <div class="bg-white rounded-lg shadow-md border mb-4 sm:mb-6 lg:mb-8">
-        <div class="p-3 sm:p-4 lg:p-6">
-            <form method="get" class="space-y-3 sm:space-y-4">
-                <div class="space-y-3 sm:space-y-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-3 lg:gap-4">
-                    <div class="sm:col-span-2 lg:col-span-1">
-                        <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Search</label>
+    <div class="bg-white rounded-lg shadow-sm border mb-6">
+        <div class="p-4">
+            <form method="get">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-3">
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
                         <input type="text" name="search" value="{{ request.GET.search }}" 
                                placeholder="Search problems..." 
-                               class="w-full border border-gray-300 rounded px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                               class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
-                    <div>
-                        <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Difficulty</label>
-                        <select name="difficulty" class="w-full border border-gray-300 rounded px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">All Difficulties</option>
-                            <option value="Easy" {% if request.GET.difficulty == 'Easy' %}selected{% endif %}>Easy</option>
-                            <option value="Medium" {% if request.GET.difficulty == 'Medium' %}selected{% endif %}>Medium</option>
-                            <option value="Hard" {% if request.GET.difficulty == 'Hard' %}selected{% endif %}>Hard</option>
-                        </select>
-                    </div>
-                    <div class="sm:flex sm:items-end">
-                        <div class="flex gap-2 w-full">
-                            <button type="submit" class="bg-blue-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded hover:bg-blue-700 text-xs sm:text-sm flex-1 sm:flex-none flex items-center justify-center gap-1">
-                                <i class="fas fa-search text-xs"></i>
-                                <span>Filter</span>
-                            </button>
-                            {% if request.GET %}
-                                <a href="{% url 'problems:admin_problems' %}" class="bg-gray-200 text-gray-700 px-3 sm:px-4 py-1.5 sm:py-2 rounded hover:bg-gray-300 text-xs sm:text-sm flex-1 sm:flex-none text-center flex items-center justify-center gap-1">
-                                    <i class="fas fa-times text-xs"></i>
-                                    <span>Clear</span>
-                                </a>
-                            {% endif %}
-                        </div>
+                    <select name="category" class="px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:'s' %}selected{% endif %}>{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="difficulty" class="px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">All Difficulties</option>
+                        <option value="Easy" {% if request.GET.difficulty == 'Easy' %}selected{% endif %}>Easy</option>
+                        <option value="Medium" {% if request.GET.difficulty == 'Medium' %}selected{% endif %}>Medium</option>
+                        <option value="Hard" {% if request.GET.difficulty == 'Hard' %}selected{% endif %}>Hard</option>
+                    </select>
+                    <select name="contest_type" class="px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">All Types</option>
+                        <option value="regular_only" {% if request.GET.contest_type == 'regular_only' %}selected{% endif %}>Regular</option>
+                        <option value="contest_only" {% if request.GET.contest_type == 'contest_only' %}selected{% endif %}>Contest</option>
+                    </select>
+                    <div class="flex gap-2">
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 text-sm font-medium flex-1">
+                            Filter
+                        </button>
+                        {% if request.GET %}
+                            <a href="{% url 'problems:admin_problems' %}" class="bg-gray-100 text-gray-700 px-4 py-2.5 rounded-lg hover:bg-gray-200 text-sm font-medium">
+                                Clear
+                            </a>
+                        {% endif %}
                     </div>
                 </div>
             </form>
@@ -69,8 +73,16 @@
 
     <!-- Problems Table/Cards -->
     <div class="bg-white rounded-lg shadow-md border">
-        <div class="p-3 sm:p-4 lg:p-6 border-b">
-            <h2 class="text-base sm:text-lg lg:text-xl font-semibold text-gray-900">All Problems</h2>
+        <div class="p-3 sm:p-4 lg:p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div class="flex items-center justify-between">
+                <h2 class="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 flex items-center gap-2">
+                    <i class="fas fa-code text-blue-600"></i>
+                    All Problems
+                </h2>
+                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                    {{ problems.paginator.count }} total
+                </span>
+            </div>
         </div>
         
         {% if problems %}
@@ -79,20 +91,25 @@
                 <table class="w-full">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Problem</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Difficulty</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Problem</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Category</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Difficulty</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Created</th>
+                            <th class="px-6 py-4 text-center text-sm font-semibold text-gray-700">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200">
                         {% for problem in problems %}
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4">
-                                    <a href="{% url 'problems:problem_detail' problem.slug %}" class="text-blue-600 hover:text-blue-800 font-semibold">
-                                        {{ problem.title }}
-                                    </a>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold text-gray-900">
+                                            {{ problem.title }}
+                                        </span>
+                                        {% if problem.contest_only %}
+                                            <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-medium">Contest</span>
+                                        {% endif %}
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm">{{ problem.category.name }}</span>
@@ -110,18 +127,18 @@
                                     {{ problem.created_at|date:"M d, Y" }}
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="flex items-center gap-2">
-                                        <a href="{% url 'problems:edit_problem' problem.slug %}" class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50" title="Edit Problem">
-                                            <i class="fas fa-edit"></i>
+                                    <div class="flex items-center justify-center gap-1">
+                                        <a href="{% url 'problems:edit_problem' problem.slug %}" class="bg-blue-500 text-white hover:bg-blue-600 p-2 rounded-md transition-colors" title="Edit">
+                                            <i class="fas fa-edit text-xs"></i>
                                         </a>
-                                        <a href="{% url 'problems:manage_test_cases' problem.slug %}" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50" title="Manage Test Cases">
-                                            <i class="fas fa-vial"></i>
+                                        <a href="{% url 'problems:manage_test_cases' problem.slug %}" class="bg-green-500 text-white hover:bg-green-600 p-2 rounded-md transition-colors" title="Test Cases">
+                                            <i class="fas fa-vial text-xs"></i>
                                         </a>
-                                        <a href="{% url 'problems:problem_detail' problem.slug %}" class="text-gray-600 hover:text-gray-800 p-2 rounded hover:bg-gray-50" title="View Problem">
-                                            <i class="fas fa-eye"></i>
+                                        <a href="{% url 'problems:problem_solve' problem.slug %}" class="bg-gray-500 text-white hover:bg-gray-600 p-2 rounded-md transition-colors" title="View">
+                                            <i class="fas fa-eye text-xs"></i>
                                         </a>
-                                        <a href="{% url 'problems:delete_problem' problem.slug %}" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50" title="Delete Problem">
-                                            <i class="fas fa-trash"></i>
+                                        <a href="{% url 'problems:delete_problem' problem.slug %}" class="bg-red-500 text-white hover:bg-red-600 p-2 rounded-md transition-colors" title="Delete">
+                                            <i class="fas fa-trash text-xs"></i>
                                         </a>
                                     </div>
                                 </td>
@@ -137,9 +154,14 @@
                     <div class="p-3 sm:p-4 hover:bg-gray-50">
                         <div class="mb-3">
                             <div class="flex-1 min-w-0">
-                                <a href="{% url 'problems:problem_detail' problem.slug %}" class="text-blue-600 hover:text-blue-800 font-semibold text-sm sm:text-base block mb-2 leading-tight">
-                                    {{ problem.title }}
-                                </a>
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="font-semibold text-gray-900 text-sm sm:text-base leading-tight">
+                                        {{ problem.title }}
+                                    </span>
+                                    {% if problem.contest_only %}
+                                        <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-medium">Contest</span>
+                                    {% endif %}
+                                </div>
                                 <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2">
                                     <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-medium">{{ problem.category.name }}</span>
                                     {% if problem.difficulty == 'Easy' %}
@@ -155,18 +177,18 @@
                         </div>
                         <div class="flex justify-between items-center">
                             <div class="text-xs text-gray-400">Actions:</div>
-                            <div class="flex gap-1">
-                                <a href="{% url 'problems:edit_problem' problem.slug %}" class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50 flex items-center justify-center" title="Edit">
-                                    <i class="fas fa-edit text-sm"></i>
+                            <div class="flex gap-1 justify-center">
+                                <a href="{% url 'problems:edit_problem' problem.slug %}" class="bg-blue-500 text-white hover:bg-blue-600 p-2 rounded-md transition-colors" title="Edit">
+                                    <i class="fas fa-edit text-xs"></i>
                                 </a>
-                                <a href="{% url 'problems:manage_test_cases' problem.slug %}" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50 flex items-center justify-center" title="Test Cases">
-                                    <i class="fas fa-vial text-sm"></i>
+                                <a href="{% url 'problems:manage_test_cases' problem.slug %}" class="bg-green-500 text-white hover:bg-green-600 p-2 rounded-md transition-colors" title="Test Cases">
+                                    <i class="fas fa-vial text-xs"></i>
                                 </a>
-                                <a href="{% url 'problems:problem_detail' problem.slug %}" class="text-gray-600 hover:text-gray-800 p-2 rounded hover:bg-gray-50 flex items-center justify-center" title="View">
-                                    <i class="fas fa-eye text-sm"></i>
+                                <a href="{% url 'problems:problem_solve' problem.slug %}" class="bg-gray-500 text-white hover:bg-gray-600 p-2 rounded-md transition-colors" title="View">
+                                    <i class="fas fa-eye text-xs"></i>
                                 </a>
-                                <a href="{% url 'problems:delete_problem' problem.slug %}" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50 flex items-center justify-center" title="Delete">
-                                    <i class="fas fa-trash text-sm"></i>
+                                <a href="{% url 'problems:delete_problem' problem.slug %}" class="bg-red-500 text-white hover:bg-red-600 p-2 rounded-md transition-colors" title="Delete">
+                                    <i class="fas fa-trash text-xs"></i>
                                 </a>
                             </div>
                         </div>
@@ -191,8 +213,8 @@
     <div class="flex justify-center mt-4 sm:mt-6 px-3">
         <div class="flex flex-wrap justify-center gap-1 sm:gap-2">
             {% if problems.has_previous %}
-                <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.difficulty %}&difficulty={{ request.GET.difficulty }}{% endif %}" class="bg-white border border-gray-300 text-gray-700 px-2 sm:px-3 py-1 sm:py-2 rounded text-xs sm:text-sm hover:bg-gray-50">First</a>
-                <a href="?page={{ problems.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.difficulty %}&difficulty={{ request.GET.difficulty }}{% endif %}" class="bg-white border border-gray-300 text-gray-700 px-2 sm:px-3 py-1 sm:py-2 rounded text-xs sm:text-sm hover:bg-gray-50">Prev</a>
+                <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.difficulty %}&difficulty={{ request.GET.difficulty }}{% endif %}{% if request.GET.contest_type %}&contest_type={{ request.GET.contest_type }}{% endif %}" class="bg-white border border-gray-300 text-gray-700 px-2 sm:px-3 py-1 sm:py-2 rounded text-xs sm:text-sm hover:bg-gray-50">First</a>
+                <a href="?page={{ problems.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.difficulty %}&difficulty={{ request.GET.difficulty }}{% endif %}{% if request.GET.contest_type %}&contest_type={{ request.GET.contest_type }}{% endif %}" class="bg-white border border-gray-300 text-gray-700 px-2 sm:px-3 py-1 sm:py-2 rounded text-xs sm:text-sm hover:bg-gray-50">Prev</a>
             {% endif %}
             
             <span class="bg-blue-600 text-white px-2 sm:px-3 py-1 sm:py-2 rounded text-xs sm:text-sm font-medium">
@@ -200,8 +222,8 @@
             </span>
             
             {% if problems.has_next %}
-                <a href="?page={{ problems.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.difficulty %}&difficulty={{ request.GET.difficulty }}{% endif %}" class="bg-white border border-gray-300 text-gray-700 px-2 sm:px-3 py-1 sm:py-2 rounded text-xs sm:text-sm hover:bg-gray-50">Next</a>
-                <a href="?page={{ problems.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.difficulty %}&difficulty={{ request.GET.difficulty }}{% endif %}" class="bg-white border border-gray-300 text-gray-700 px-2 sm:px-3 py-1 sm:py-2 rounded text-xs sm:text-sm hover:bg-gray-50">Last</a>
+                <a href="?page={{ problems.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.difficulty %}&difficulty={{ request.GET.difficulty }}{% endif %}{% if request.GET.contest_type %}&contest_type={{ request.GET.contest_type }}{% endif %}" class="bg-white border border-gray-300 text-gray-700 px-2 sm:px-3 py-1 sm:py-2 rounded text-xs sm:text-sm hover:bg-gray-50">Next</a>
+                <a href="?page={{ problems.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.difficulty %}&difficulty={{ request.GET.difficulty }}{% endif %}{% if request.GET.contest_type %}&contest_type={{ request.GET.contest_type }}{% endif %}" class="bg-white border border-gray-300 text-gray-700 px-2 sm:px-3 py-1 sm:py-2 rounded text-xs sm:text-sm hover:bg-gray-50">Last</a>
             {% endif %}
         </div>
     </div>

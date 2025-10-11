@@ -31,9 +31,47 @@ class UserProfile(models.Model):
         return f"{self.user.username}'s Profile"
     
     def get_success_rate(self):
-        if self.total_submissions == 0:
+        from submissions.models import Submission
+        
+        # Count unique problems solved (AC)
+        solved_problems = Submission.objects.filter(
+            user=self.user,
+            verdict='AC',
+            is_test=False
+        ).values('problem').distinct().count()
+        
+        # Count wrong answer submissions
+        wrong_answers = Submission.objects.filter(
+            user=self.user,
+            verdict='WA',
+            is_test=False
+        ).count()
+        
+        total_attempts = solved_problems + wrong_answers
+        
+        if total_attempts == 0:
             return 0
-        return round((self.solved_problems / self.total_submissions) * 100, 2)
+        
+        return round((solved_problems / total_attempts) * 100, 2)
+    
+    def update_stats(self):
+        """Update solved_problems and total_submissions based on actual submissions"""
+        from submissions.models import Submission
+        
+        # Update solved problems count (unique problems with AC)
+        self.solved_problems = Submission.objects.filter(
+            user=self.user,
+            verdict='AC',
+            is_test=False
+        ).values('problem').distinct().count()
+        
+        # Update total submissions count (exclude test submissions)
+        self.total_submissions = Submission.objects.filter(
+            user=self.user,
+            is_test=False
+        ).count()
+        
+        self.save()
 
 
 @receiver(post_save, sender=User)

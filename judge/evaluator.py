@@ -105,7 +105,7 @@ class CodeEvaluator:
                 compile_cmd,
                 capture_output=True,
                 text=True,
-                timeout=15,  # Increased timeout for complex code
+                timeout=5,  # Reduced timeout for faster processing
                 cwd=self.temp_dir
             )
             
@@ -115,6 +115,8 @@ class CodeEvaluator:
                 error_msg = result.stderr.strip()
                 if len(error_msg) > 2000:  # Limit error message size
                     error_msg = error_msg[:2000] + '...'
+                # Remove file paths from error message
+                error_msg = self._clean_error_message(error_msg)
                 self.submission.compilation_error = error_msg
                 self.submission.save()
                 return False
@@ -131,7 +133,7 @@ class CodeEvaluator:
             
         except subprocess.TimeoutExpired:
             self.submission.verdict = 'CE'
-            self.submission.compilation_error = 'Compilation timeout (15s exceeded)'
+            self.submission.compilation_error = 'Compilation timeout (5s exceeded)'
             self.submission.save()
             return False
         except Exception as e:
@@ -143,13 +145,29 @@ class CodeEvaluator:
     def run_test_cases(self, sample_only=False):
         """Run code against test cases"""
         if sample_only:
-            # Only run sample test cases (is_sample=True)
-            test_cases = TestCase.objects.filter(problem=self.problem, is_sample=True)
-        else:
-            # Run all test cases
-            test_cases = TestCase.objects.filter(problem=self.problem)
+            # Only run sample test cases (is_sample=True) + problem's sample_input/output
+            test_cases = list(TestCase.objects.filter(problem=self.problem, is_sample=True))
             
-        total_cases = test_cases.count()
+            # Add problem's sample_input/output as a test case if exists
+            if self.problem.sample_input and self.problem.sample_output:
+                from types import SimpleNamespace
+                sample_case = SimpleNamespace()
+                sample_case.input_data = self.problem.sample_input
+                sample_case.expected_output = self.problem.sample_output
+                test_cases.insert(0, sample_case)  # Add as first test case
+        else:
+            # Run all test cases + problem's sample_input/output
+            test_cases = list(TestCase.objects.filter(problem=self.problem))
+            
+            # Add problem's sample_input/output as a test case if exists
+            if self.problem.sample_input and self.problem.sample_output:
+                from types import SimpleNamespace
+                sample_case = SimpleNamespace()
+                sample_case.input_data = self.problem.sample_input
+                sample_case.expected_output = self.problem.sample_output
+                test_cases.insert(0, sample_case)  # Add as first test case
+            
+        total_cases = len(test_cases)
         passed_cases = 0
         max_time = 0
         max_memory = 0
@@ -232,7 +250,7 @@ class CodeEvaluator:
                                 process.kill()
                                 return 'TLE', self.time_limit, max_memory // 1024
                             
-                            time.sleep(0.01)  # Small delay to prevent excessive CPU usage
+                            time.sleep(0.005)  # Smaller delay for faster processing
                             
                         except (psutil.NoSuchProcess, psutil.AccessDenied):
                             break
@@ -251,7 +269,7 @@ class CodeEvaluator:
                     with open(output_file, 'r', encoding='utf-8') as f:
                         actual_output = f.read().strip()
                     
-                    expected_output = test_case.expected_output.strip()
+                    expected_output = self._strip_html_tags(test_case.expected_output).strip()
                     
                     # Enhanced output comparison with detailed logging
                     if self._compare_outputs(actual_output, expected_output):
@@ -312,6 +330,29 @@ class CodeEvaluator:
             return True
         
         return False
+    
+    def _strip_html_tags(self, text):
+        """Remove HTML tags from text"""
+        import re
+        # Remove HTML tags
+        clean_text = re.sub(r'<[^>]+>', '', text)
+        return clean_text
+    
+    def _clean_error_message(self, error_msg):
+        """Remove file paths and clean up error messages"""
+        import re
+        
+        # Remove Windows/Unix file paths
+        error_msg = re.sub(r'[A-Za-z]:\\[^\s:]+\\solution_\d+\.(cpp|c|py):', '', error_msg)
+        error_msg = re.sub(r'/[^\s:]+/solution_\d+\.(cpp|c|py):', '', error_msg)
+        
+        # Remove temp directory references
+        error_msg = re.sub(r'solution_\d+\.(cpp|c|py):', '', error_msg)
+        
+        # Clean up multiple spaces and newlines
+        error_msg = re.sub(r'\s+', ' ', error_msg).strip()
+        
+        return error_msg
     
     def cleanup(self):
         """Enhanced cleanup of temporary files"""

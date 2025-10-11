@@ -7,8 +7,8 @@ from django.utils import timezone
 from django.utils._os import safe_join
 from django.conf import settings
 from django.http import JsonResponse
-from .models import Contest, ContestParticipation, ContestProblem
-from .forms import ContestForm, ContestProblemForm
+from .models import Contest, ContestParticipation, ContestProblem, ContestAnnouncement
+from .forms import ContestForm, ContestProblemForm, ContestAnnouncementForm
 from submissions.models import Submission
 import os
 import re
@@ -45,7 +45,9 @@ def contest_detail(request, slug):
     
     participation = None
     is_banned = False
-    if request.user.is_authenticated:
+    is_admin = request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser)
+    
+    if request.user.is_authenticated and not is_admin:
         participation = ContestParticipation.objects.filter(contest=contest, user=request.user).first()
         
         # Check if user is banned
@@ -62,7 +64,8 @@ def contest_detail(request, slug):
         'contest': contest,
         'contest_problems': contest_problems,
         'participation': participation,
-        'is_banned': is_banned
+        'is_banned': is_banned,
+        'is_admin': is_admin
     })
 
 
@@ -73,7 +76,9 @@ def contest_problems(request, slug):
     
     # Check if user is participating
     participation = None
-    if request.user.is_authenticated:
+    is_admin = request.user.is_staff or request.user.is_superuser
+    
+    if request.user.is_authenticated and not is_admin:
         participation = ContestParticipation.objects.filter(contest=contest, user=request.user).first()
         
         # Check if user is banned
@@ -81,9 +86,9 @@ def contest_problems(request, slug):
             messages.error(request, 'You have been banned from this contest.')
             return redirect('contests:contest_detail', slug=slug)
     
-    # For past contests, allow access without participation
-    if contest.status == 'ended':
-        participation = True  # Allow access to past contests
+    # For past contests or admin users, allow access without participation
+    if contest.status == 'ended' or is_admin:
+        participation = True  # Allow access to past contests and admin users
     
     # Get solved problems for the user (exclude test submissions)
     solved_problem_ids = set()
@@ -101,13 +106,19 @@ def contest_problems(request, slug):
         'contest': contest,
         'contest_problems': contest_problems,
         'participation': participation,
-        'solved_problem_ids': solved_problem_ids
+        'solved_problem_ids': solved_problem_ids,
+        'is_admin': is_admin
     })
 
 
 @login_required
 def join_contest(request, slug):
     contest = get_object_or_404(Contest, slug=slug, is_active=True)
+    
+    # Prevent admin users from joining contests
+    if request.user.is_staff or request.user.is_superuser:
+        messages.error(request, 'Admin users cannot participate in contests.')
+        return redirect('contests:contest_detail', slug=slug)
     
     if contest.status == 'ended':
         messages.error(request, 'Contest has already ended.')
@@ -139,8 +150,12 @@ def contest_leaderboard(request, slug):
     contest_problems = ContestProblem.objects.filter(contest=contest).select_related('problem')
     contest_problem_ids = [cp.problem.id for cp in contest_problems]
     
-    # Get all participations with user data
-    participations = ContestParticipation.objects.filter(contest=contest).select_related('user')
+    # Get all participations with user data, excluding admin users
+    participations = ContestParticipation.objects.filter(
+        contest=contest,
+        user__is_staff=False,
+        user__is_superuser=False
+    ).select_related('user')
     
     # Bulk fetch all submissions for the contest period (exclude test submissions)
     all_submissions = Submission.objects.filter(
@@ -262,7 +277,9 @@ def manage_contest_problems(request, slug):
             messages.success(request, 'Problem added to contest!')
             return redirect('contests:manage_problems', slug=slug)
     else:
-        form = ContestProblemForm()
+        # Set initial values
+        next_order = contest_problems.count() + 1
+        form = ContestProblemForm(initial={'order': next_order, 'points': 1})
     
     return render(request, 'contests/manage_contest_problems.html', {
         'contest': contest,
@@ -276,15 +293,7 @@ def manage_contest_problems(request, slug):
 def remove_contest_problem(request, slug, problem_id):
     contest = get_object_or_404(Contest, slug=slug)
     contest_problem = get_object_or_404(ContestProblem, id=problem_id, contest=contest)
-    problem = contest_problem.problem
     contest_problem.delete()
-    
-    # Check if problem is used in any other contests
-    other_contest_problems = ContestProblem.objects.filter(problem=problem).exists()
-    if not other_contest_problems:
-        # If not used in any other contests, unmark as contest_only
-        problem.contest_only = False
-        problem.save()
     
     messages.success(request, 'Problem removed from contest!')
     return redirect('contests:manage_problems', slug=slug)
@@ -292,13 +301,44 @@ def remove_contest_problem(request, slug, problem_id):
 
 @login_required
 @user_passes_test(is_staff)
+def edit_contest_problem(request, slug, problem_id):
+    contest = get_object_or_404(Contest, slug=slug)
+    contest_problem = get_object_or_404(ContestProblem, id=problem_id, contest=contest)
+    
+    if request.method == 'POST':
+        form = ContestProblemForm(request.POST, instance=contest_problem)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Contest problem updated!')
+            return redirect('contests:manage_problems', slug=slug)
+    else:
+        form = ContestProblemForm(instance=contest_problem)
+    
+    return render(request, 'contests/edit_contest_problem.html', {
+        'contest': contest,
+        'contest_problem': contest_problem,
+        'form': form
+    })
+
+
+@login_required
+@user_passes_test(is_staff)
 def edit_contest(request, slug):
     contest = get_object_or_404(Contest, slug=slug)
+    
+    # Allow editing upcoming and running contests
+    if contest.status == 'ended':
+        messages.error(request, 'Ended contests cannot be edited.')
+        return redirect('contests:admin_contests')
     
     if request.method == 'POST':
         form = ContestForm(request.POST, instance=contest)
         if form.is_valid():
-            form.save()
+            old_slug = contest.slug
+            contest = form.save()
+            # If slug changed, show warning about URL change
+            if old_slug != contest.slug:
+                messages.warning(request, f'Contest URL changed from /{old_slug}/ to /{contest.slug}/')
             messages.success(request, 'Contest updated successfully!')
             return redirect('contests:admin_contests')
     else:
@@ -415,7 +455,9 @@ def contest_problem_solve(request, slug, problem_slug):
     
     # Check if user can access this contest problem
     participation = None
-    if request.user.is_authenticated:
+    is_admin = request.user.is_staff or request.user.is_superuser
+    
+    if request.user.is_authenticated and not is_admin:
         participation = ContestParticipation.objects.filter(contest=contest, user=request.user).first()
         
         # Check if user is banned
@@ -423,17 +465,42 @@ def contest_problem_solve(request, slug, problem_slug):
             messages.error(request, 'You have been banned from this contest.')
             return redirect('contests:contest_detail', slug=slug)
     
-    # For past contests, allow access without participation
-    if contest.status == 'ended':
+    # For past contests or admin users, allow access without participation
+    if contest.status == 'ended' or is_admin:
         participation = True
     elif contest.status == 'running' and not participation:
         messages.error(request, 'You must join the contest first.')
         return redirect('contests:contest_detail', slug=slug)
     
+    # Get user's latest submission for this problem
+    latest_submission = None
+    if request.user.is_authenticated:
+        latest_submission = Submission.objects.filter(
+            user=request.user,
+            problem=problem,
+            is_test=False
+        ).order_by('-submitted_at').first()
+    
+    # Get next and previous problems in contest
+    next_problem = ContestProblem.objects.filter(
+        contest=contest,
+        order__gt=contest_problem.order
+    ).order_by('order').first()
+    
+    prev_problem = ContestProblem.objects.filter(
+        contest=contest,
+        order__lt=contest_problem.order
+    ).order_by('-order').first()
+    
     return render(request, 'contests/contest_problem_solve.html', {
         'contest': contest,
         'contest_problem': contest_problem,
-        'problem': problem
+        'problem': problem,
+        'latest_submission': latest_submission,
+        'next_problem': next_problem,
+        'prev_problem': prev_problem,
+        'current_order': contest_problem.order,
+        'is_admin': is_admin
     })
 
 
@@ -448,11 +515,16 @@ def contest_test_code(request, slug, problem_slug):
     problem = contest_problem.problem
     
     # Check access
-    participation = ContestParticipation.objects.filter(contest=contest, user=request.user).first()
-    if contest.status == 'running' and not participation:
-        return JsonResponse({'error': 'Must join contest first'}, status=403)
-    if participation and participation.is_banned:
-        return JsonResponse({'error': 'Banned from contest'}, status=403)
+    is_admin = request.user.is_staff or request.user.is_superuser
+    
+    if not is_admin:
+        participation = ContestParticipation.objects.filter(contest=contest, user=request.user).first()
+        if contest.status == 'running' and not participation:
+            return JsonResponse({'error': 'Must join contest first'}, status=403)
+        if participation and participation.is_banned:
+            return JsonResponse({'error': 'Banned from contest'}, status=403)
+    elif contest.status == 'running':
+        return JsonResponse({'error': 'Admin users cannot test code during live contests'}, status=403)
     
     try:
         import json
@@ -517,11 +589,16 @@ def contest_submit_ajax(request, slug, problem_slug):
     problem = contest_problem.problem
     
     # Check access
-    participation = ContestParticipation.objects.filter(contest=contest, user=request.user).first()
-    if contest.status == 'running' and not participation:
-        return JsonResponse({'error': 'Must join contest first'}, status=403)
-    if participation and participation.is_banned:
-        return JsonResponse({'error': 'Banned from contest'}, status=403)
+    is_admin = request.user.is_staff or request.user.is_superuser
+    
+    if not is_admin:
+        participation = ContestParticipation.objects.filter(contest=contest, user=request.user).first()
+        if contest.status == 'running' and not participation:
+            return JsonResponse({'error': 'Must join contest first'}, status=403)
+        if participation and participation.is_banned:
+            return JsonResponse({'error': 'Banned from contest'}, status=403)
+    elif contest.status == 'running':
+        return JsonResponse({'error': 'Admin users cannot submit solutions during live contests'}, status=403)
     
     try:
         import json
@@ -580,3 +657,93 @@ def check_solved_status(request, slug):
     return JsonResponse({
         'solved_problem_ids': list(solved_problem_ids)
     })
+
+
+@login_required
+@user_passes_test(is_staff)
+def contest_discussions_api(request, slug):
+    """API endpoint to get contest discussions for admin"""
+    contest = get_object_or_404(Contest, slug=slug, is_active=True)
+    contest_problems = ContestProblem.objects.filter(contest=contest).select_related('problem')
+    problem_ids = [cp.problem.id for cp in contest_problems]
+    
+    from communications.models import ProblemDiscussion
+    discussions = ProblemDiscussion.objects.filter(
+        problem_id__in=problem_ids
+    ).select_related('user', 'problem').order_by('-created_at')[:20]
+    
+    discussions_data = []
+    for discussion in discussions:
+        discussions_data.append({
+            'id': discussion.id,
+            'title': discussion.title,
+            'message': discussion.message,
+            'user': discussion.user.username,
+            'problem_title': discussion.problem.title,
+            'is_resolved': discussion.is_resolved,
+            'created_at': discussion.created_at.isoformat(),
+            'replies_count': discussion.replies.count()
+        })
+    
+    return JsonResponse({
+        'discussions': discussions_data
+    })
+
+
+@login_required
+@user_passes_test(is_staff)
+def contest_discussions(request, slug):
+    """Contest discussions management page for admin"""
+    contest = get_object_or_404(Contest, slug=slug, is_active=True)
+    contest_problems = ContestProblem.objects.filter(contest=contest).select_related('problem')
+    problem_ids = [cp.problem.id for cp in contest_problems]
+    
+    from communications.models import ProblemDiscussion
+    discussions = ProblemDiscussion.objects.filter(
+        problem_id__in=problem_ids
+    ).select_related('user', 'problem').order_by('-created_at')
+    
+    return render(request, 'contests/contest_discussions.html', {
+        'contest': contest,
+        'discussions': discussions,
+        'contest_problems': contest_problems
+    })
+
+
+@login_required
+@user_passes_test(is_staff)
+def manage_announcements(request, slug):
+    contest = get_object_or_404(Contest, slug=slug)
+    announcements = ContestAnnouncement.objects.filter(contest=contest)
+    
+    if request.method == 'POST':
+        form = ContestAnnouncementForm(request.POST)
+        if form.is_valid():
+            announcement = form.save(commit=False)
+            announcement.contest = contest
+            announcement.created_by = request.user
+            announcement.save()
+            messages.success(request, 'Announcement sent to all contestants!')
+            return redirect('contests:manage_announcements', slug=slug)
+    else:
+        form = ContestAnnouncementForm()
+    
+    return render(request, 'contests/manage_announcements.html', {
+        'contest': contest,
+        'announcements': announcements,
+        'form': form
+    })
+
+
+def get_contest_announcements(request, slug):
+    contest = get_object_or_404(Contest, slug=slug, is_active=True)
+    announcements = ContestAnnouncement.objects.filter(contest=contest)[:10]
+    
+    announcements_data = [{
+        'id': a.id,
+        'title': a.title,
+        'message': a.message,
+        'created_at': a.created_at.strftime('%Y-%m-%d %H:%M')
+    } for a in announcements]
+    
+    return JsonResponse({'announcements': announcements_data})

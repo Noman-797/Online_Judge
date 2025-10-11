@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat with {{ other_user.username }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen p-4">
+    <!-- Chat Header -->
+    <div class="bg-white rounded-lg shadow border p-4 mb-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <a href="{% url 'communications:chat_list' %}" class="btn btn-outline btn-sm">←</a>
+                <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
+                    {{ other_user.username|first|upper }}
+                </div>
+                <div>
+                    <div class="font-medium">{{ other_user.username }}</div>
+                    <div class="text-xs text-green-600">Admin</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Container -->
+    <div class="grid grid-cols-3 gap-4 h-[calc(100vh-12rem)]">
+        <!-- Left: Empty -->
+        <div></div>
+        
+        <!-- Middle: Chat Messages -->
+        <div class="bg-white rounded-lg shadow border flex flex-col">
+            <div class="flex-1 overflow-y-auto p-4 space-y-3" id="messages-container">
+                {% for message in messages %}
+                    <div class="flex {% if message.sender == user %}justify-end{% else %}justify-start{% endif %}">
+                        <div class="max-w-xs px-4 py-2 rounded-lg
+                            {% if message.sender == user %}
+                                bg-blue-500 text-white
+                            {% else %}
+                                bg-gray-100 text-gray-800
+                            {% endif %}">
+                            <div class="text-sm">{{ message.content }}</div>
+                            <div class="text-xs mt-1 {% if message.sender == user %}text-blue-100{% else %}text-gray-500{% endif %}">
+                                {{ message.created_at|date:"g:i A" }}
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="text-center text-gray-500 py-8">
+                        Start your conversation with admin
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Message Input -->
+            <div class="border-t p-4">
+                <form method="post" class="flex space-x-2">
+                    {% csrf_token %}
+                    <input type="text" name="content" placeholder="Type a message..." 
+                           class="flex-1 input input-bordered" required>
+                    <button type="submit" class="btn btn-primary">Send</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Right: Empty -->
+        <div></div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('messages-container');
+    container.scrollTop = container.scrollHeight;
+});
+</script>
+{% endblock %}

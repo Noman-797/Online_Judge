@@ -3,11 +3,14 @@ from .models import Problem, Category, TestCase
 
 
 class ProblemForm(forms.ModelForm):
+    input_file = forms.FileField(required=False, help_text='Upload test input file (.txt)')
+    output_file = forms.FileField(required=False, help_text='Upload test output file (.txt)')
+    
     class Meta:
         model = Problem
         fields = ['title', 'slug', 'description', 'input_format', 'output_format', 
-                 'constraints', 'sample_input', 'sample_output', 'difficulty', 
-                 'time_limit', 'memory_limit', 'category', 'tags', 'contest_only']
+                 'constraints', 'sample_input', 'sample_output', 'sample_note', 'difficulty', 
+                 'time_limit', 'memory_limit', 'category', 'contest_only']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter problem title'}),
             'slug': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'problem-slug'}),
@@ -17,11 +20,12 @@ class ProblemForm(forms.ModelForm):
             'constraints': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'sample_input': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'sample_output': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'sample_note': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Optional explanation...'}),
             'difficulty': forms.Select(attrs={'class': 'form-control'}),
             'time_limit': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '2.0'}),
             'memory_limit': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '256'}),
             'category': forms.Select(attrs={'class': 'form-control'}),
-            'tags': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'arrays, sorting, dynamic programming'}),
+
             'contest_only': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
@@ -29,12 +33,18 @@ class ProblemForm(forms.ModelForm):
 class TestCaseForm(forms.ModelForm):
     class Meta:
         model = TestCase
-        fields = ['input_data', 'expected_output', 'is_sample']
+        fields = ['input_data', 'expected_output', 'is_sample', 'note']
         widgets = {
             'input_data': forms.Textarea(attrs={'class': 'textarea textarea-bordered w-full', 'rows': 4}),
             'expected_output': forms.Textarea(attrs={'class': 'textarea textarea-bordered w-full', 'rows': 4}),
             'is_sample': forms.CheckboxInput(attrs={'class': 'checkbox'}),
+            'note': forms.TextInput(attrs={'class': 'input input-bordered w-full', 'placeholder': 'Optional note...'}),
         }
+
+
+class TestCaseFileForm(forms.Form):
+    input_file = forms.FileField(required=False)
+    output_file = forms.FileField(required=False)
 
 
 class CategoryForm(forms.ModelForm):

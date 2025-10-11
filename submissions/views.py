@@ -16,7 +16,7 @@ import json
 
 @login_required
 def submit_solution(request, slug):
-    problem = get_object_or_404(Problem, slug=slug, is_active=True, contest_only=False)
+    problem = get_object_or_404(Problem, slug=slug, is_active=True)
     
     if request.method == 'POST':
         # Handle AJAX submission
@@ -172,7 +172,7 @@ def test_code(request, slug):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
-    problem = get_object_or_404(Problem, slug=slug, is_active=True, contest_only=False)
+    problem = get_object_or_404(Problem, slug=slug, is_active=True)
     
     try:
         data = json.loads(request.body)
@@ -182,8 +182,6 @@ def test_code(request, slug):
         if not code:
             return JsonResponse({
                 'verdict': 'CE',
-                'execution_time': 0,
-                'memory_used': 0,
                 'test_cases_passed': 0,
                 'total_test_cases': 0,
                 'error_message': 'No code provided'
@@ -204,8 +202,6 @@ def test_code(request, slug):
         
         return JsonResponse({
             'verdict': temp_submission.verdict,
-            'execution_time': temp_submission.execution_time or 0,
-            'memory_used': temp_submission.memory_used or 0,
             'test_cases_passed': temp_submission.test_cases_passed or 0,
             'total_test_cases': temp_submission.total_test_cases or 0,
             'error_message': temp_submission.compilation_error or temp_submission.runtime_error or None
@@ -216,8 +212,6 @@ def test_code(request, slug):
     except Exception as e:
         return JsonResponse({
             'verdict': 'RE',
-            'execution_time': 0,
-            'memory_used': 0,
             'test_cases_passed': 0,
             'total_test_cases': 0,
             'error_message': str(e)
@@ -230,7 +224,7 @@ def submit_ajax(request, slug):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
-    problem = get_object_or_404(Problem, slug=slug, is_active=True, contest_only=False)
+    problem = get_object_or_404(Problem, slug=slug, is_active=True)
     
     try:
         data = json.loads(request.body)
@@ -339,7 +333,7 @@ def recent_submissions(request):
 
 @staff_member_required
 def process_queue_manual(request):
-    """Manual queue processing for PythonAnywhere"""
+    """Fast manual queue processing"""
     if request.method == 'POST':
         limit = int(request.POST.get('limit', 5))
         queued_submissions = Submission.get_queued_submissions(limit=limit)
@@ -348,12 +342,18 @@ def process_queue_manual(request):
         processed = 0
         failed = 0
         
+        # Process submissions with minimal overhead
         for submission in queued_submissions:
             try:
+                # Set judging status immediately
+                submission.verdict = 'JUDGING'
+                submission.save(update_fields=['verdict'])
+                
                 from judge.evaluator import CodeEvaluator
                 evaluator = CodeEvaluator(submission)
                 evaluator.evaluate()
-                success = submission.verdict != 'RE'
+                
+                success = submission.verdict in ['AC', 'WA', 'PE']
                 
                 results.append({
                     'id': submission.id,
@@ -363,20 +363,21 @@ def process_queue_manual(request):
                     'success': success
                 })
                 
-                if success:
-                    processed += 1
-                else:
-                    failed += 1
+                processed += 1
                     
             except Exception as e:
+                submission.verdict = 'RE'
+                submission.runtime_error = str(e)[:500]
+                submission.save(update_fields=['verdict', 'runtime_error'])
+                
                 failed += 1
                 results.append({
                     'id': submission.id,
                     'user': submission.user.username,
                     'problem': submission.problem.title,
-                    'verdict': 'ERROR',
+                    'verdict': 'RE',
                     'success': False,
-                    'error': str(e)
+                    'error': str(e)[:100]
                 })
         
         return JsonResponse({
@@ -398,10 +399,29 @@ def process_queue_manual(request):
 @staff_member_required
 def queue_status_api(request):
     """API endpoint for queue status"""
+    from django.utils import timezone
+    from django.utils.timesince import timesince
+    
+    # Get recent queued submissions
+    recent_queued = Submission.objects.filter(verdict='QUEUED').order_by('submitted_at')[:10]
+    recent_queued_data = []
+    
+    for sub in recent_queued:
+        recent_queued_data.append({
+            'user': sub.user.username,
+            'problem': sub.problem.title,
+            'language': sub.get_language_display(),
+            'time_ago': timesince(sub.submitted_at) + ' ago'
+        })
+    
     return JsonResponse({
         'queued': Submission.objects.filter(verdict='QUEUED').count(),
         'judging': Submission.objects.filter(verdict='JUDGING').count(),
-        'recent_ac': Submission.objects.filter(verdict='AC').count(),
+        'recent_ac': Submission.objects.filter(
+            verdict='AC',
+            judged_at__gte=timezone.now() - timezone.timedelta(hours=1)
+        ).count(),
+        'recent_queued': recent_queued_data
     })
 
 
@@ -427,3 +447,48 @@ def check_pending_submissions(request):
         'completed': list(recent_completed),
         'timestamp': timezone.now().isoformat()
     })
+
+
+@login_required
+def submission_status_api(request, submission_id):
+    """API endpoint to get current submission status"""
+    submission = get_object_or_404(Submission, id=submission_id, user=request.user)
+    
+    return JsonResponse({
+        'verdict': submission.verdict,
+        'verdict_display': submission.get_verdict_display(),
+        'execution_time': float(submission.execution_time) if submission.execution_time else 0,
+        'memory_used': submission.memory_used or 0,
+        'test_cases_passed': submission.test_cases_passed or 0,
+        'total_test_cases': submission.total_test_cases or 0,
+        'compilation_error': submission.compilation_error or None,
+        'runtime_error': submission.runtime_error or None,
+        'problem_title': submission.problem.title,
+        'submitted_at': submission.submitted_at.isoformat(),
+        'judged_at': submission.judged_at.isoformat() if submission.judged_at else None
+    })
+
+
+@login_required
+def problem_verdicts_api(request):
+    """API endpoint to get best verdicts for all problems (prioritizing AC)"""
+    from django.db.models import Q
+    
+    # Get all user submissions
+    submissions = Submission.objects.filter(
+        user=request.user,
+        is_test=False
+    ).select_related('problem')
+    
+    verdicts = {}
+    for submission in submissions:
+        problem_id = str(submission.problem_id)
+        current_verdict = verdicts.get(problem_id)
+        
+        # If no verdict yet or current submission is AC, use it
+        if not current_verdict or submission.verdict == 'AC':
+            verdicts[problem_id] = submission.verdict
+        # If current verdict is not AC and this submission is not AC, keep the existing
+        # This ensures AC always takes priority
+    
+    return JsonResponse(verdicts)

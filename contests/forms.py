@@ -1,6 +1,6 @@
 from django import forms
 from django.utils.text import slugify
-from .models import Contest, ContestProblem
+from .models import Contest, ContestProblem, ContestAnnouncement
 from problems.models import Problem
 
 
@@ -42,15 +42,16 @@ class ContestProblemForm(forms.ModelForm):
     problem = forms.ModelChoiceField(
         queryset=Problem.objects.filter(is_active=True, contest_only=True),
         widget=forms.Select(attrs={'class': 'select select-bordered w-full'}),
-        help_text="Only contest-only problems (hidden from public list) are shown"
+        help_text="Only contest-only problems (hidden from public list) are shown",
+        empty_label="Select Problem"
     )
     
     class Meta:
         model = ContestProblem
         fields = ['problem', 'order', 'points']
         widgets = {
-            'order': forms.NumberInput(attrs={'class': 'input input-bordered w-full', 'value': 1}),
-            'points': forms.NumberInput(attrs={'class': 'input input-bordered w-full', 'value': 100}),
+            'order': forms.NumberInput(attrs={'class': 'input input-bordered w-full'}),
+            'points': forms.NumberInput(attrs={'class': 'input input-bordered w-full'}),
         }
     
     def save(self, commit=True):
@@ -64,3 +65,13 @@ class ContestProblemForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
+
+
+class ContestAnnouncementForm(forms.ModelForm):
+    class Meta:
+        model = ContestAnnouncement
+        fields = ['title', 'message']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'input input-bordered w-full'}),
+            'message': forms.Textarea(attrs={'class': 'textarea textarea-bordered w-full', 'rows': 4}),
+        }

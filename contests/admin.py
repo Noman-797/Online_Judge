@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Contest, ContestProblem, ContestParticipation
+from .models import Contest, ContestProblem, ContestParticipation, ContestAnnouncement
 
 
 @admin.register(Contest)
@@ -20,3 +20,10 @@ class ContestProblemAdmin(admin.ModelAdmin):
 class ContestParticipationAdmin(admin.ModelAdmin):
     list_display = ['contest', 'user', 'total_score', 'problems_solved', 'start_time']
     list_filter = ['contest', 'start_time']
+
+
+@admin.register(ContestAnnouncement)
+class ContestAnnouncementAdmin(admin.ModelAdmin):
+    list_display = ['contest', 'title', 'created_by', 'created_at']
+    list_filter = ['contest', 'created_at']
+    search_fields = ['title', 'message']

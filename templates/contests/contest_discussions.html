@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ contest.title }} - Discussions{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="mb-6">
+        <div class="flex items-center gap-4 mb-4">
+            <a href="{% url 'contests:contest_problems' contest.slug %}" class="btn btn-outline btn-sm">
+                <i class="fas fa-arrow-left mr-1"></i>Back to Contest
+            </a>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ contest.title }} - Discussions</h1>
+        <p class="text-gray-600">Manage discussions for all contest problems</p>
+    </div>
+
+    <!-- Discussion Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white p-4 rounded-lg shadow border">
+            <div class="flex items-center">
+                <div class="p-2 bg-blue-100 rounded-lg">
+                    <i class="fas fa-comments text-blue-600"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-gray-500">Total Discussions</p>
+                    <p class="text-lg font-semibold text-gray-900">{{ discussions.count }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow border">
+            <div class="flex items-center">
+                <div class="p-2 bg-green-100 rounded-lg">
+                    <i class="fas fa-check-circle text-green-600"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-gray-500">Resolved</p>
+                    <p class="text-lg font-semibold text-gray-900">{{ discussions|length|add:"-1" }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow border">
+            <div class="flex items-center">
+                <div class="p-2 bg-orange-100 rounded-lg">
+                    <i class="fas fa-clock text-orange-600"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-gray-500">Open</p>
+                    <p class="text-lg font-semibold text-gray-900">{{ discussions|length|add:"-1" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Discussions List -->
+    <div class="bg-white rounded-lg shadow border">
+        <div class="p-4 border-b">
+            <h2 class="text-lg font-semibold text-gray-900">All Discussions</h2>
+        </div>
+        
+        {% if discussions %}
+            <div class="divide-y divide-gray-200">
+                {% for discussion in discussions %}
+                <div class="p-4 hover:bg-gray-50">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-2">
+                                <h3 class="font-medium text-gray-900">
+                                    <a href="{% url 'communications:discussion_detail' discussion.id %}" class="link link-hover">
+                                        {{ discussion.title }}
+                                    </a>
+                                </h3>
+                                {% if discussion.is_resolved %}
+                                    <span class="badge badge-success badge-sm">Resolved</span>
+                                {% else %}
+                                    <span class="badge badge-warning badge-sm">Open</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-gray-600 text-sm mb-2">{{ discussion.message|truncatewords:20 }}</p>
+                            <div class="flex items-center gap-4 text-xs text-gray-500">
+                                <span><i class="fas fa-code mr-1"></i>{{ discussion.problem.title }}</span>
+                                <span><i class="fas fa-user mr-1"></i>{{ discussion.user.username }}</span>
+                                <span><i class="fas fa-clock mr-1"></i>{{ discussion.created_at|timesince }} ago</span>
+                                <span><i class="fas fa-comments mr-1"></i>{{ discussion.replies.count }} replies</span>
+                            </div>
+                        </div>
+                        <div class="ml-4 flex gap-2">
+                            <a href="{% url 'communications:discussion_detail' discussion.id %}" class="btn btn-outline btn-xs">
+                                <i class="fas fa-eye mr-1"></i>View
+                            </a>
+                            {% if not discussion.is_resolved %}
+                                <button onclick="markResolved({{ discussion.id }})" class="btn btn-success btn-xs">
+                                    <i class="fas fa-check mr-1"></i>Resolve
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-12">
+                <i class="fas fa-comments text-4xl text-gray-400 mb-4"></i>
+                <p class="text-gray-600">No discussions found for this contest</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function markResolved(discussionId) {
+    if (!confirm('Mark this discussion as resolved?')) return;
+    
+    fetch(`/communications/discussion/${discussionId}/resolve/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error resolving discussion');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Network error occurred');
+    });
+}
+</script>
+{% endblock %}

@@ -74,8 +74,53 @@ def problem_solve(request, slug):
         messages.error(request, 'Invalid problem identifier.')
         return redirect('problems:problem_list')
     
-    problem = get_object_or_404(Problem, slug=slug, is_active=True, contest_only=False)
-    return render(request, 'problems/problem_solve.html', {'problem': problem})
+    problem = get_object_or_404(Problem, slug=slug, is_active=True)
+    
+    # Get user's latest submission for this problem
+    latest_submission = None
+    if request.user.is_authenticated:
+        latest_submission = Submission.objects.filter(
+            user=request.user,
+            problem=problem,
+            is_test=False
+        ).order_by('-submitted_at').first()
+    
+    # Get prev/next problems
+    all_problems = Problem.objects.filter(is_active=True, contest_only=False).order_by('created_at')
+    problem_list = list(all_problems)
+    
+    current_index = None
+    for i, p in enumerate(problem_list):
+        if p.id == problem.id:
+            current_index = i
+            break
+    
+    prev_problem = None
+    next_problem = None
+    
+    if current_index is not None:
+        if current_index > 0:
+            prev_problem = problem_list[current_index - 1]
+        if current_index < len(problem_list) - 1:
+            next_problem = problem_list[current_index + 1]
+    
+    return render(request, 'problems/problem_solve.html', {
+        'problem': problem,
+        'latest_submission': latest_submission,
+        'prev_problem': prev_problem,
+        'next_problem': next_problem
+    })
+
+
+@login_required
+def problem_detail(request, slug):
+    """View problem details without submission capability"""
+    problem = get_object_or_404(Problem, slug=slug, is_active=True)
+    
+    return render(request, 'problems/problem_detail.html', {
+        'problem': problem,
+        'view_only': True
+    })
 
 
 def is_staff(user):
@@ -86,6 +131,7 @@ def is_staff(user):
 @user_passes_test(is_staff)
 def admin_problems(request):
     problems = Problem.objects.all().order_by('created_at')
+    categories = Category.objects.all()
     
     # Search functionality
     search = request.GET.get('search')
@@ -95,6 +141,11 @@ def admin_problems(request):
             Q(description__icontains=search) |
             Q(tags__icontains=search)
         )
+    
+    # Filter by category
+    category_id = request.GET.get('category')
+    if category_id:
+        problems = problems.filter(category_id=category_id)
     
     # Filter by difficulty
     difficulty = request.GET.get('difficulty')
@@ -108,23 +159,88 @@ def admin_problems(request):
     elif status == 'inactive':
         problems = problems.filter(is_active=False)
     
+    # Filter by contest type
+    contest_type = request.GET.get('contest_type')
+    if contest_type == 'contest_only':
+        problems = problems.filter(contest_only=True)
+    elif contest_type == 'regular_only':
+        problems = problems.filter(contest_only=False)
+    # Default: show all problems (both contest and regular)
+    
     paginator = Paginator(problems, 20)
     page = request.GET.get('page')
     problems = paginator.get_page(page)
     
-    return render(request, 'problems/admin_problems.html', {'problems': problems})
+    return render(request, 'problems/admin_problems.html', {
+        'problems': problems,
+        'categories': categories
+    })
 
 
 @login_required
 @user_passes_test(is_staff)
 def add_problem(request):
     if request.method == 'POST':
-        form = ProblemForm(request.POST)
+        form = ProblemForm(request.POST, request.FILES)
         if form.is_valid():
             problem = form.save(commit=False)
             problem.created_by = request.user
             problem.save()
-            messages.success(request, 'Problem added successfully!')
+            
+            # Handle file uploads for test cases
+            input_file = form.cleaned_data.get('input_file')
+            output_file = form.cleaned_data.get('output_file')
+            
+            if input_file and output_file:
+                try:
+                    input_content = input_file.read().decode('utf-8')
+                    output_content = output_file.read().decode('utf-8')
+                    
+                    # Split by double newlines to separate test cases
+                    inputs = [inp.strip() for inp in input_content.split('\n\n') if inp.strip()]
+                    outputs = [out.strip() for out in output_content.split('\n\n') if out.strip()]
+                    
+                    # Create test cases
+                    for i, (inp, out) in enumerate(zip(inputs, outputs)):
+                        TestCase.objects.create(
+                            problem=problem,
+                            input_data=inp,
+                            expected_output=out,
+                            is_sample=(i == 0)  # First test case as sample
+                        )
+                    
+                    messages.success(request, f'Problem created with {len(inputs)} test cases from files!')
+                    return redirect('problems:admin_problems')
+                except Exception as e:
+                    messages.warning(request, f'Problem created but failed to process test files: {str(e)}')
+            
+            # Handle manual test cases
+            test_inputs = request.POST.getlist('test_input[]')
+            test_outputs = request.POST.getlist('test_output[]')
+            test_notes = request.POST.getlist('test_note[]')
+            is_samples = request.POST.getlist('is_sample[]')
+            
+            for i, (inp, out) in enumerate(zip(test_inputs, test_outputs)):
+                if inp.strip() and out.strip():
+                    note = test_notes[i].strip() if i < len(test_notes) else ''
+                    TestCase.objects.create(
+                        problem=problem,
+                        input_data=inp.strip(),
+                        expected_output=out.strip(),
+                        is_sample=str(i) in is_samples,
+                        note=note
+                    )
+            
+            # Count manual test cases
+            manual_count = len([i for i in test_inputs if i.strip()])
+            
+            if input_file and output_file:
+                pass  # Already handled above
+            elif manual_count > 0:
+                messages.success(request, f'Problem created with {manual_count} manual test cases!')
+            else:
+                messages.success(request, 'Problem created successfully! You can add test cases later.')
+            
             return redirect('problems:admin_problems')
     else:
         form = ProblemForm()
@@ -162,7 +278,9 @@ def manage_test_cases(request, slug):
             test_case.problem = problem
             test_case.save()
             messages.success(request, 'Test case added successfully!')
-            return redirect('problems:manage_test_cases', slug=slug)
+            # Preserve the page parameter when redirecting back
+            page = request.GET.get('page', '1')
+            return redirect(f"{request.path}?page={page}")
     else:
         form = TestCaseForm()
     
@@ -255,7 +373,9 @@ def edit_test_case(request, test_case_id):
         if form.is_valid():
             form.save()
             messages.success(request, 'Test case updated successfully!')
-            return redirect('problems:manage_test_cases', slug=problem.slug)
+            # Preserve the page parameter when redirecting back
+            page = request.GET.get('page', '1')
+            return redirect(f"/problems/admin/{problem.slug}/test-cases/?page={page}")
     else:
         form = TestCaseForm(instance=test_case)
     
@@ -275,7 +395,9 @@ def delete_test_case(request, test_case_id):
     if request.method == 'POST':
         test_case.delete()
         messages.success(request, 'Test case deleted successfully!')
-        return redirect('problems:manage_test_cases', slug=problem.slug)
+        # Preserve the page parameter when redirecting back
+        page = request.GET.get('page', '1')
+        return redirect(f"/problems/admin/{problem.slug}/test-cases/?page={page}")
     
     return render(request, 'problems/delete_test_case.html', {
         'test_case': test_case,
